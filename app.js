@@ -15,8 +15,8 @@ const users = require("./routes/users");
 onerror(app);
 
 // 资源缓存
-// app.use(conditional());
-// app.use(etag());
+app.use(conditional());
+app.use(etag());
 
 // middlewares
 app.use(
