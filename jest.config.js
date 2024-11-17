@@ -15,7 +15,6 @@ const config = {
   // cacheDirectory: "C:\\Users\\李敏锐\\AppData\\Local\\Temp\\jest",
 
   // Automatically clear mock calls, instances, contexts and results before every test
-  "testResultsProcessor": "./node_modules/jest-junit",
   clearMocks: true,
 
   // Indicates whether the coverage information should be collected while executing the test
