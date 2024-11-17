@@ -17,18 +17,21 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}.
 
-  # build-and-deploy:
-  #   concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout 🛎️
-  #       uses: actions/checkout@v4
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
       
-  #     - name: Upload test results to Codecov
-  #       if: ${{ !cancelled() }}
-  #       uses: codecov/test-results-action@v1
-  #       with:
-  #         token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Run tests
+        run: npx jest --coverage
+      
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   #     - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
   #       run: |
