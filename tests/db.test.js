@@ -33,3 +33,7 @@ test("db test", async () => {
 
   expect(userItem.password).toBe("123456");
 });
+
+test("test instance method", () => {
+  // await UserModel.
+});
