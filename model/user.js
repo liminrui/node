@@ -12,16 +12,24 @@ const UserSchema = new Mongoose.Schema(
     },
   },
   {
-    methods: {
-      toString() {
-        console.log(`my name is :${this.name} and my pwd is ${this.password}`);
+    toJSON: {
+      virtuals: true,
+    },
+    virtuals: {
+      peronInfo: {
+        get() {
+          return this.toString();
+        },
       },
     },
-  },
-  {
+    methods: {
+      toString() {
+        return `my name is :${this.username} and my pwd is ${this.password}`;
+      },
+    },
     statics: {
       findByName(name) {
-        return this.find({ name: new RegExp(name, "i") });
+        return this.findOne({ username: name });
       },
     },
   }

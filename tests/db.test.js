@@ -19,7 +19,8 @@ afterAll(async () => {
   await mongoServer.stop();
 });
 
-test("db test", async () => {
+// 只运行这一条
+test.only("db test && instance method", async () => {
   await UserModel.deleteOne({ username: "lmr" });
 
   const user = new UserModel({
@@ -32,8 +33,17 @@ test("db test", async () => {
   const userItem = await UserModel.findOne({ username: "lmr" });
 
   expect(userItem.password).toBe("123456");
+
+  const users = await UserModel.find();
+
+  expect(users.length).toBe(1);
+  expect(users[0].username).toBe("lmr");
+
+  expect(user.peronInfo).toBe("my name is :lmr and my pwd is 123456");
 });
 
-test("test instance method", () => {
-  // await UserModel.
+test("test instance method", async () => {
+  const user = await UserModel.findByName("lmr");
+
+  expect(user.password).toBe("123456");
 });
