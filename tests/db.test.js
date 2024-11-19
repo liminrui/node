@@ -31,6 +31,7 @@ test("db test && instance method", async () => {
   await user.save();
 
   const userItem = await UserModel.findOne({ username: "lmr" });
+  console.log("userItem: ", userItem);
 
   //   expect(userItem.password).toBe("123456");
 

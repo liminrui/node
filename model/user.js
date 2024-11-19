@@ -1,6 +1,7 @@
 const Mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const lastMod = require("../plugins/lastMode");
 
 const UserSchema = new Mongoose.Schema(
   {
@@ -51,6 +52,8 @@ UserSchema.pre("save", async function (next) {
 
   next();
 });
+
+UserSchema.plugin(lastMod, { index: true });
 
 const UserModel = Mongoose.model("User", UserSchema);
 

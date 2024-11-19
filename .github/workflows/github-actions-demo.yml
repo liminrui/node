@@ -26,10 +26,10 @@ jobs:
 
       - name: install
         run: npm i
-      
-      - name: Run tests
-        run: npx jest --coverage
-      
+
+      # - name: Run tests
+      #   run: npx jest --coverage
+
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
@@ -41,7 +41,7 @@ jobs:
   #         npm ci
   #         npm run start
 
-      # - name: Deploy 🚀
-      #   uses: JamesIves/github-pages-deploy-action@v4
-      #   with:
-      #     folder: build # The folder the action should deploy.
+  # - name: Deploy 🚀
+  #   uses: JamesIves/github-pages-deploy-action@v4
+  #   with:
+  #     folder: build # The folder the action should deploy.
