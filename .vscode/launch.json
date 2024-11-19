@@ -12,6 +12,15 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\bin\\www"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "debug",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\debug\\index"
         }
     ]
 }
