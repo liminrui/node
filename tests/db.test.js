@@ -1,6 +1,7 @@
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const mongoose = require("mongoose");
 const UserModel = require("../model/user");
+const genUserData = require("../utils/gen");
 // mongoose.set("debug", true);
 
 let mongoServer = null;
@@ -19,6 +20,26 @@ afterAll(async () => {
   await mongoServer.stop();
 });
 
+describe("page", () => {
+  // 插入多条数据
+  test("insertMany", async () => {
+    const data = genUserData(10);
+    await UserModel.insertMany(data);
+  });
+  // 测试插入是否成功
+  test("find all", async () => {
+    const userList = await UserModel.find();
+
+    expect(userList.length).toBeGreaterThanOrEqual(10);
+  });
+  // 分页查询
+  test("search by split", async () => {
+    const result = await UserModel.find().skip(3).limit(3);
+
+    expect(result.length).toBe(3);
+  });
+});
+
 // 只运行这一条
 test("db test && instance method", async () => {
   await UserModel.deleteOne({ username: "lmr" });
@@ -31,7 +52,6 @@ test("db test && instance method", async () => {
   await user.save();
 
   const userItem = await UserModel.findOne({ username: "lmr" });
-  console.log("userItem: ", userItem);
 
   //   expect(userItem.password).toBe("123456");
 
@@ -40,9 +60,13 @@ test("db test && instance method", async () => {
   expect(users.length).toBe(1);
   expect(users[0].username).toBe("lmr");
 
+  //   expect(user.peronInfo).toBe("my name is :lmr and my pwd is 123456");
+});
+
+test("bcrypt password", async () => {
   expect(
     await UserModel.login({
-      username: user.username,
+      username: "lmr",
       password: "123456",
     })
   ).toBe("校验正确");
@@ -70,12 +94,10 @@ test("db test && instance method", async () => {
       password: user3.password,
     })
   ).toBe("密码错误");
-
-  //   expect(user.peronInfo).toBe("my name is :lmr and my pwd is 123456");
 });
 
-test("test instance method", async () => {
-  const user = await UserModel.findByName("lmr");
+// test("test instance method", async () => {
+//   const user = await UserModel.findByName("lmr");
 
-  expect(user.password).toBe("123456");
-});
+//   expect(user.password).toBe("123456");
+// });
