@@ -1,4 +1,6 @@
 const Mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 const UserSchema = new Mongoose.Schema(
   {
@@ -12,9 +14,6 @@ const UserSchema = new Mongoose.Schema(
     },
   },
   {
-    toJSON: {
-      virtuals: true,
-    },
     virtuals: {
       peronInfo: {
         get() {
@@ -31,9 +30,27 @@ const UserSchema = new Mongoose.Schema(
       findByName(name) {
         return this.findOne({ username: name });
       },
+      async login({ username, password }) {
+        const user = await this.findOne({ username });
+
+        if (!user) return "不存在该用户";
+        const res = await bcrypt.compare(password, user.password);
+
+        return res ? "校验正确" : "密码错误";
+      },
     },
   }
 );
+
+UserSchema.pre("save", async function (next) {
+  const salt = await bcrypt.genSalt(saltRounds);
+
+  const hash = await bcrypt.hash(this.password, salt);
+
+  this.password = hash;
+
+  next();
+});
 
 const UserModel = Mongoose.model("User", UserSchema);
 
