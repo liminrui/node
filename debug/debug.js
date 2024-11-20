@@ -1,4 +1,4 @@
-const debug = require('debug')('http')
-console.log('debug: ', debug.enabled);
+const debug = require("debug")("foo");
+// console.log("debug: ", debug.enabled);
 
-debug('here!!')
+debug("here!!");

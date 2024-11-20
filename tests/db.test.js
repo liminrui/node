@@ -2,7 +2,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const mongoose = require("mongoose");
 const UserModel = require("../model/user");
 const genUserData = require("../utils/gen");
-// mongoose.set("debug", true);
+const { Story, Person } = require("../model/populate");
 
 let mongoServer = null;
 
@@ -37,6 +37,45 @@ describe("page", () => {
     const result = await UserModel.find().skip(3).limit(3);
 
     expect(result.length).toBe(3);
+
+    // 通过last_id来分页查询
+    const users = await UserModel.find().limit(3);
+    const last_id = users[2].id;
+    let res = await UserModel.find({
+      _id: {
+        $gt: last_id,
+      },
+    }).limit(3);
+
+    expect(result).toEqual(res);
+  });
+});
+
+describe("populate", () => {
+  test("save instance", async () => {
+    const author = new Person({
+      _id: new mongoose.Types.ObjectId(),
+      name: "Ian Fleming",
+      age: 50,
+    });
+
+    await author.save();
+
+    const data = await Person.find();
+    expect(data.length).toBe(1);
+
+    const story1 = new Story({
+      title: "Casino Royale",
+      author: author._id, // assign the _id from the person
+    });
+
+    await story1.save();
+
+    const story = await Story.findOne({ title: "Casino Royale" })
+      .populate("author")
+      .exec();
+
+    expect(story.author.name).toBe("Ian Fleming");
   });
 });
 
