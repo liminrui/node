@@ -79,6 +79,219 @@ describe("populate", () => {
   });
 });
 
+describe("aggerate", () => {
+  test("search by aggregate", async () => {
+    const OrderModel = require("../model/order");
+
+    await OrderModel.insertMany([
+      {
+        _id: 0,
+        name: "Pepperoni",
+        size: "small",
+        price: 19,
+        quantity: 10,
+        date: Date("2021-03-13T08:14:30Z"),
+      },
+      {
+        _id: 1,
+        name: "Pepperoni",
+        size: "medium",
+        price: 20,
+        quantity: 20,
+        date: Date("2021-03-13T09:13:24Z"),
+      },
+      {
+        _id: 2,
+        name: "Pepperoni",
+        size: "large",
+        price: 21,
+        quantity: 30,
+        date: Date("2021-03-17T09:22:12Z"),
+      },
+      {
+        _id: 3,
+        name: "Cheese",
+        size: "small",
+        price: 12,
+        quantity: 15,
+        date: Date("2021-03-13T11:21:39.736Z"),
+      },
+      {
+        _id: 4,
+        name: "Cheese",
+        size: "medium",
+        price: 13,
+        quantity: 50,
+        date: Date("2022-01-12T21:23:13.331Z"),
+      },
+      {
+        _id: 5,
+        name: "Cheese",
+        size: "large",
+        price: 14,
+        quantity: 10,
+        date: Date("2022-01-12T05:08:13Z"),
+      },
+      {
+        _id: 6,
+        name: "Vegan",
+        size: "small",
+        price: 17,
+        quantity: 10,
+        date: Date("2021-01-13T05:08:13Z"),
+      },
+      {
+        _id: 7,
+        name: "Vegan",
+        size: "medium",
+        price: 18,
+        quantity: 10,
+        date: Date("2021-01-13T05:10:13Z"),
+      },
+    ]);
+    const res = await OrderModel.aggregate([
+      // Stage 1: Filter pizza order documents by pizza size
+      {
+        $match: { size: "medium" },
+      },
+      // Stage 2: Group remaining documents by pizza name and calculate total quantity
+      {
+        $group: { _id: "$name", totalQuantity: { $sum: "$quantity" } },
+      },
+    ]);
+
+    expect(res.length).toBe(3);
+  });
+
+  test("add or remove field", async () => {
+    const labModel = require("../model/labReading");
+
+    await labModel.insertMany([
+      {
+        date: Date("2021-01-13T05:08:13Z"),
+        temperature: 80,
+      },
+      {
+        date: null,
+        temperature: 83,
+      },
+      {
+        date: Date("2021-01-13T05:08:13Z"),
+        temperature: 85,
+      },
+    ]);
+
+    const res = await labModel.aggregate([
+      {
+        $addFields: {
+          date: {
+            $ifNull: ["$date", "$$REMOVE"],
+          },
+        },
+      },
+    ]);
+
+    expect(res.length).toBe(3);
+
+    // const res2 = await labModel.find();
+  });
+
+  test("bucket", async () => {
+    const ArtistModel = require("../model/artists");
+    await ArtistModel.insertMany([
+      {
+        _id: 1,
+        last_name: "Bernard",
+        first_name: "Emil",
+        year_born: 1868,
+        year_died: 1941,
+        nationality: "France",
+      },
+      {
+        _id: 2,
+        last_name: "Rippl-Ronai",
+        first_name: "Joszef",
+        year_born: 1861,
+        year_died: 1927,
+        nationality: "Hungary",
+      },
+      {
+        _id: 3,
+        last_name: "Ostroumova",
+        first_name: "Anna",
+        year_born: 1871,
+        year_died: 1955,
+        nationality: "Russia",
+      },
+      {
+        _id: 4,
+        last_name: "Van Gogh",
+        first_name: "Vincent",
+        year_born: 1853,
+        year_died: 1890,
+        nationality: "Holland",
+      },
+      {
+        _id: 5,
+        last_name: "Maurer",
+        first_name: "Alfred",
+        year_born: 1868,
+        year_died: 1932,
+        nationality: "USA",
+      },
+      {
+        _id: 6,
+        last_name: "Munch",
+        first_name: "Edvard",
+        year_born: 1863,
+        year_died: 1944,
+        nationality: "Norway",
+      },
+      {
+        _id: 7,
+        last_name: "Redon",
+        first_name: "Odilon",
+        year_born: 1840,
+        year_died: 1916,
+        nationality: "France",
+      },
+      {
+        _id: 8,
+        last_name: "Diriks",
+        first_name: "Edvard",
+        year_born: 1855,
+        year_died: 1930,
+        nationality: "Norway",
+      },
+    ]);
+
+    // 添加bucket查询
+    const res = await ArtistModel.aggregate([
+      {
+        $bucket: {
+          groupBy: "$year_born",
+          boundaries: [1840, 1850, 1860, 1870, 1880], // Boundaries for the buckets
+          default: "Other", // Bucket ID for documents which do not fall into a bucket
+          output: {
+            // Output for each bucket
+            count: { $sum: 1 },
+            artists: {
+              $push: {
+                name: { $concat: ["$first_name", " ", "$last_name"] },
+                year_born: "$year_born",
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: { count: { $gt: 3 } },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res));
+  });
+});
+
 // 只运行这一条
 test("db test && instance method", async () => {
   await UserModel.deleteOne({ username: "lmr" });
