@@ -290,6 +290,131 @@ describe("aggerate", () => {
     ]);
     console.log("res: ", JSON.stringify(res));
   });
+
+  test("unwind", async () => {
+    const InventoryModel = require("../model/inventory");
+    // const inventory = new InventoryModel({
+    //   _id: 1,
+    //   item: "ABC1",
+    //   sizes: ["S", "M", "L"],
+    // });
+
+    // await inventory.save();
+
+    await InventoryModel.insertMany([
+      { _id: 1, item: "Shirt", price: 3, sizes: ["S", "M", "L"] },
+      { _id: 2, item: "Shorts", price: 5, sizes: [] },
+      { _id: 3, item: "Hat", sizes: "M", price: 8 },
+      { _id: 4, item: "Gloves", price: 10 },
+      { _id: 5, item: "Scarf", sizes: null, price: 12 },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $unwind: {
+          path: "$sizes",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$sizes",
+          averagePrice: { $avg: "$price" },
+        },
+      },
+      {
+        $sort: { averagePrice: -1 },
+      },
+    ]);
+    console.log(res);
+    expect(res.length).toBe(4);
+  });
+
+  test("facet", async () => {
+    const ArtWorkModel = require("../model/artwork");
+
+    await ArtWorkModel.insertMany([
+      {
+        _id: 1,
+        title: "The Pillars of Society",
+        artist: "Grosz",
+        year: 1926,
+        price: Number("199.99"),
+        tags: ["painting", "satire", "Expressionism", "caricature"],
+      },
+      {
+        _id: 2,
+        title: "Melancholy III",
+        artist: "Munch",
+        year: 1902,
+        price: Number("280.00"),
+        tags: ["woodcut", "Expressionism"],
+      },
+      {
+        _id: 3,
+        title: "Dancer",
+        artist: "Miro",
+        year: 1925,
+        price: Number("76.04"),
+        tags: ["oil", "Surrealism", "painting"],
+      },
+      {
+        _id: 4,
+        title: "The Great Wave off Kanagawa",
+        artist: "Hokusai",
+        price: Number("167.30"),
+        tags: ["woodblock", "ukiyo-e"],
+      },
+      {
+        _id: 5,
+        title: "The Persistence of Memory",
+        artist: "Dali",
+        year: 1931,
+        price: Number("483.00"),
+        tags: ["Surrealism", "painting", "oil"],
+      },
+      {
+        _id: 6,
+        title: "Composition VII",
+        artist: "Kandinsky",
+        year: 1913,
+        price: Number("385.00"),
+        tags: ["oil", "painting", "abstract"],
+      },
+      {
+        _id: 7,
+        title: "The Scream",
+        artist: "Munch",
+        year: 1893,
+        tags: ["Expressionism", "painting", "oil"],
+      },
+      {
+        _id: 8,
+        title: "Blue Flower",
+        artist: "O'Keefe",
+        year: 1918,
+        price: Number("118.42"),
+        tags: ["abstract", "painting"],
+      },
+    ]);
+
+    const res = await ArtWorkModel.aggregate([
+      {
+        $facet: {
+          sortByTags: [{ $unwind: "$tags" }, { $sortByCount: "$tags" }],
+          "categorizedByYears(Auto)": [
+            {
+              $bucketAuto: {
+                groupBy: "$year",
+                buckets: 4,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+    console.log(JSON.stringify(res));
+  });
 });
 
 // 只运行这一条
@@ -347,9 +472,3 @@ test("bcrypt password", async () => {
     })
   ).toBe("密码错误");
 });
-
-// test("test instance method", async () => {
-//   const user = await UserModel.findByName("lmr");
-
-//   expect(user.password).toBe("123456");
-// });
