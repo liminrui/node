@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const UserModel = require("../model/user");
 const genUserData = require("../utils/gen");
 const { Story, Person } = require("../model/populate");
+// const { describe } = require("node:test");
 
 let mongoServer = null;
 
@@ -288,7 +289,15 @@ describe("aggerate", () => {
         $match: { count: { $gt: 3 } },
       },
     ]);
-    console.log("res: ", JSON.stringify(res));
+    const res2 = await ArtistModel.aggregate([
+      {
+        $bucketAuto: {
+          groupBy: "$year_born",
+          buckets: 5,
+        },
+      },
+    ]);
+    console.log("res2: ", res2);
   });
 
   test("unwind", async () => {
@@ -326,7 +335,7 @@ describe("aggerate", () => {
         $sort: { averagePrice: -1 },
       },
     ]);
-    console.log(res);
+
     expect(res.length).toBe(4);
   });
 
@@ -413,7 +422,89 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log(JSON.stringify(res));
+  });
+
+  test("count", async () => {
+    const ScoreModel = require("../model/score");
+
+    await ScoreModel.insertMany([
+      { _id: 1, subject: "History", score: 88 },
+      { _id: 2, subject: "History", score: 92 },
+      { _id: 3, subject: "History", score: 97 },
+      { _id: 4, subject: "History", score: 71 },
+      { _id: 5, subject: "History", score: 79 },
+      { _id: 6, subject: "History", score: 83 },
+    ]);
+
+    const res = await ScoreModel.aggregate([
+      {
+        $match: {
+          score: {
+            $gt: 80,
+          },
+        },
+      },
+      {
+        $count: "test_count",
+      },
+    ]);
+    console.log("test res: ", res);
+  });
+
+  test("fill", async () => {
+    const RestaurantModel = require("../model/restaurantReview");
+
+    await RestaurantModel.insertMany([
+      {
+        date: Date("2021-03-08"),
+        score: 90,
+      },
+      {
+        date: Date("2021-03-09"),
+        score: 92,
+      },
+      {
+        date: Date("2021-03-10"),
+      },
+      {
+        date: Date("2021-03-11"),
+      },
+      {
+        date: Date("2021-03-12"),
+        score: 85,
+      },
+      {
+        date: Date("2021-03-13"),
+      },
+    ]);
+
+    const res = await RestaurantModel.aggregate([
+      {
+        $set: {
+          valueExist: {
+            $ifNull: [
+              {
+                $toBool: { $toString: "$score" },
+              },
+              false,
+            ],
+          },
+        },
+      },
+      {
+        $fill: {
+          sortBy: {
+            date: 1,
+          },
+          output: {
+            score: {
+              method: "locf",
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
   });
 });
 
