@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const UserModel = require("../model/user");
 const genUserData = require("../utils/gen");
 const { Story, Person } = require("../model/populate");
+// const { describe } = require("node:test");
 
 let mongoServer = null;
 
@@ -79,6 +80,434 @@ describe("populate", () => {
   });
 });
 
+describe("aggerate", () => {
+  test("search by aggregate", async () => {
+    const OrderModel = require("../model/order");
+
+    await OrderModel.insertMany([
+      {
+        _id: 0,
+        name: "Pepperoni",
+        size: "small",
+        price: 19,
+        quantity: 10,
+        date: Date("2021-03-13T08:14:30Z"),
+      },
+      {
+        _id: 1,
+        name: "Pepperoni",
+        size: "medium",
+        price: 20,
+        quantity: 20,
+        date: Date("2021-03-13T09:13:24Z"),
+      },
+      {
+        _id: 2,
+        name: "Pepperoni",
+        size: "large",
+        price: 21,
+        quantity: 30,
+        date: Date("2021-03-17T09:22:12Z"),
+      },
+      {
+        _id: 3,
+        name: "Cheese",
+        size: "small",
+        price: 12,
+        quantity: 15,
+        date: Date("2021-03-13T11:21:39.736Z"),
+      },
+      {
+        _id: 4,
+        name: "Cheese",
+        size: "medium",
+        price: 13,
+        quantity: 50,
+        date: Date("2022-01-12T21:23:13.331Z"),
+      },
+      {
+        _id: 5,
+        name: "Cheese",
+        size: "large",
+        price: 14,
+        quantity: 10,
+        date: Date("2022-01-12T05:08:13Z"),
+      },
+      {
+        _id: 6,
+        name: "Vegan",
+        size: "small",
+        price: 17,
+        quantity: 10,
+        date: Date("2021-01-13T05:08:13Z"),
+      },
+      {
+        _id: 7,
+        name: "Vegan",
+        size: "medium",
+        price: 18,
+        quantity: 10,
+        date: Date("2021-01-13T05:10:13Z"),
+      },
+    ]);
+    const res = await OrderModel.aggregate([
+      // Stage 1: Filter pizza order documents by pizza size
+      {
+        $match: { size: "medium" },
+      },
+      // Stage 2: Group remaining documents by pizza name and calculate total quantity
+      {
+        $group: { _id: "$name", totalQuantity: { $sum: "$quantity" } },
+      },
+    ]);
+
+    expect(res.length).toBe(3);
+  });
+
+  test("add or remove field", async () => {
+    const labModel = require("../model/labReading");
+
+    await labModel.insertMany([
+      {
+        date: Date("2021-01-13T05:08:13Z"),
+        temperature: 80,
+      },
+      {
+        date: null,
+        temperature: 83,
+      },
+      {
+        date: Date("2021-01-13T05:08:13Z"),
+        temperature: 85,
+      },
+    ]);
+
+    const res = await labModel.aggregate([
+      {
+        $addFields: {
+          date: {
+            $ifNull: ["$date", "$$REMOVE"],
+          },
+        },
+      },
+    ]);
+
+    expect(res.length).toBe(3);
+
+    // const res2 = await labModel.find();
+  });
+
+  test("bucket", async () => {
+    const ArtistModel = require("../model/artists");
+    await ArtistModel.insertMany([
+      {
+        _id: 1,
+        last_name: "Bernard",
+        first_name: "Emil",
+        year_born: 1868,
+        year_died: 1941,
+        nationality: "France",
+      },
+      {
+        _id: 2,
+        last_name: "Rippl-Ronai",
+        first_name: "Joszef",
+        year_born: 1861,
+        year_died: 1927,
+        nationality: "Hungary",
+      },
+      {
+        _id: 3,
+        last_name: "Ostroumova",
+        first_name: "Anna",
+        year_born: 1871,
+        year_died: 1955,
+        nationality: "Russia",
+      },
+      {
+        _id: 4,
+        last_name: "Van Gogh",
+        first_name: "Vincent",
+        year_born: 1853,
+        year_died: 1890,
+        nationality: "Holland",
+      },
+      {
+        _id: 5,
+        last_name: "Maurer",
+        first_name: "Alfred",
+        year_born: 1868,
+        year_died: 1932,
+        nationality: "USA",
+      },
+      {
+        _id: 6,
+        last_name: "Munch",
+        first_name: "Edvard",
+        year_born: 1863,
+        year_died: 1944,
+        nationality: "Norway",
+      },
+      {
+        _id: 7,
+        last_name: "Redon",
+        first_name: "Odilon",
+        year_born: 1840,
+        year_died: 1916,
+        nationality: "France",
+      },
+      {
+        _id: 8,
+        last_name: "Diriks",
+        first_name: "Edvard",
+        year_born: 1855,
+        year_died: 1930,
+        nationality: "Norway",
+      },
+    ]);
+
+    // 添加bucket查询
+    const res = await ArtistModel.aggregate([
+      {
+        $bucket: {
+          groupBy: "$year_born",
+          boundaries: [1840, 1850, 1860, 1870, 1880], // Boundaries for the buckets
+          default: "Other", // Bucket ID for documents which do not fall into a bucket
+          output: {
+            // Output for each bucket
+            count: { $sum: 1 },
+            artists: {
+              $push: {
+                name: { $concat: ["$first_name", " ", "$last_name"] },
+                year_born: "$year_born",
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: { count: { $gt: 3 } },
+      },
+    ]);
+    const res2 = await ArtistModel.aggregate([
+      {
+        $bucketAuto: {
+          groupBy: "$year_born",
+          buckets: 5,
+        },
+      },
+    ]);
+    console.log("res2: ", res2);
+  });
+
+  test("unwind", async () => {
+    const InventoryModel = require("../model/inventory");
+    // const inventory = new InventoryModel({
+    //   _id: 1,
+    //   item: "ABC1",
+    //   sizes: ["S", "M", "L"],
+    // });
+
+    // await inventory.save();
+
+    await InventoryModel.insertMany([
+      { _id: 1, item: "Shirt", price: 3, sizes: ["S", "M", "L"] },
+      { _id: 2, item: "Shorts", price: 5, sizes: [] },
+      { _id: 3, item: "Hat", sizes: "M", price: 8 },
+      { _id: 4, item: "Gloves", price: 10 },
+      { _id: 5, item: "Scarf", sizes: null, price: 12 },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $unwind: {
+          path: "$sizes",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$sizes",
+          averagePrice: { $avg: "$price" },
+        },
+      },
+      {
+        $sort: { averagePrice: -1 },
+      },
+    ]);
+
+    expect(res.length).toBe(4);
+  });
+
+  test("facet", async () => {
+    const ArtWorkModel = require("../model/artwork");
+
+    await ArtWorkModel.insertMany([
+      {
+        _id: 1,
+        title: "The Pillars of Society",
+        artist: "Grosz",
+        year: 1926,
+        price: Number("199.99"),
+        tags: ["painting", "satire", "Expressionism", "caricature"],
+      },
+      {
+        _id: 2,
+        title: "Melancholy III",
+        artist: "Munch",
+        year: 1902,
+        price: Number("280.00"),
+        tags: ["woodcut", "Expressionism"],
+      },
+      {
+        _id: 3,
+        title: "Dancer",
+        artist: "Miro",
+        year: 1925,
+        price: Number("76.04"),
+        tags: ["oil", "Surrealism", "painting"],
+      },
+      {
+        _id: 4,
+        title: "The Great Wave off Kanagawa",
+        artist: "Hokusai",
+        price: Number("167.30"),
+        tags: ["woodblock", "ukiyo-e"],
+      },
+      {
+        _id: 5,
+        title: "The Persistence of Memory",
+        artist: "Dali",
+        year: 1931,
+        price: Number("483.00"),
+        tags: ["Surrealism", "painting", "oil"],
+      },
+      {
+        _id: 6,
+        title: "Composition VII",
+        artist: "Kandinsky",
+        year: 1913,
+        price: Number("385.00"),
+        tags: ["oil", "painting", "abstract"],
+      },
+      {
+        _id: 7,
+        title: "The Scream",
+        artist: "Munch",
+        year: 1893,
+        tags: ["Expressionism", "painting", "oil"],
+      },
+      {
+        _id: 8,
+        title: "Blue Flower",
+        artist: "O'Keefe",
+        year: 1918,
+        price: Number("118.42"),
+        tags: ["abstract", "painting"],
+      },
+    ]);
+
+    const res = await ArtWorkModel.aggregate([
+      {
+        $facet: {
+          sortByTags: [{ $unwind: "$tags" }, { $sortByCount: "$tags" }],
+          "categorizedByYears(Auto)": [
+            {
+              $bucketAuto: {
+                groupBy: "$year",
+                buckets: 4,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test("count", async () => {
+    const ScoreModel = require("../model/score");
+
+    await ScoreModel.insertMany([
+      { _id: 1, subject: "History", score: 88 },
+      { _id: 2, subject: "History", score: 92 },
+      { _id: 3, subject: "History", score: 97 },
+      { _id: 4, subject: "History", score: 71 },
+      { _id: 5, subject: "History", score: 79 },
+      { _id: 6, subject: "History", score: 83 },
+    ]);
+
+    const res = await ScoreModel.aggregate([
+      {
+        $match: {
+          score: {
+            $gt: 80,
+          },
+        },
+      },
+      {
+        $count: "test_count",
+      },
+    ]);
+    console.log("test res: ", res);
+  });
+
+  test("fill", async () => {
+    const RestaurantModel = require("../model/restaurantReview");
+
+    await RestaurantModel.insertMany([
+      {
+        date: Date("2021-03-08"),
+        score: 90,
+      },
+      {
+        date: Date("2021-03-09"),
+        score: 92,
+      },
+      {
+        date: Date("2021-03-10"),
+      },
+      {
+        date: Date("2021-03-11"),
+      },
+      {
+        date: Date("2021-03-12"),
+        score: 85,
+      },
+      {
+        date: Date("2021-03-13"),
+      },
+    ]);
+
+    const res = await RestaurantModel.aggregate([
+      {
+        $set: {
+          valueExist: {
+            $ifNull: [
+              {
+                $toBool: { $toString: "$score" },
+              },
+              false,
+            ],
+          },
+        },
+      },
+      {
+        $fill: {
+          sortBy: {
+            date: 1,
+          },
+          output: {
+            score: {
+              method: "locf",
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
+});
+
 // 只运行这一条
 test("db test && instance method", async () => {
   await UserModel.deleteOne({ username: "lmr" });
@@ -134,9 +563,3 @@ test("bcrypt password", async () => {
     })
   ).toBe("密码错误");
 });
-
-// test("test instance method", async () => {
-//   const user = await UserModel.findByName("lmr");
-
-//   expect(user.password).toBe("123456");
-// });
