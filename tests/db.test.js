@@ -298,7 +298,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res2: ", res2);
   });
 
   test("unwind", async () => {
@@ -449,7 +448,6 @@ describe("aggerate", () => {
         $count: "test_count",
       },
     ]);
-    console.log("test res: ", res);
   });
 
   test("fill", async () => {
@@ -505,7 +503,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res);
   });
 
   test("near", async () => {
@@ -540,7 +537,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("place:", res);
   });
 
   test("lookup", async () => {
@@ -548,8 +544,8 @@ describe("aggerate", () => {
     const InventoryModel = require("../model/inventory");
 
     await OrderModel.insertMany([
-      { _id: 1, item: ["almonds"], price: 12, quantity: 2 },
-      { _id: 2, item: ["pecans", "bread"], price: 20, quantity: 1 },
+      { _id: 1, item: "almonds", price: 12, quantity: 2 },
+      { _id: 2, item: "pecans", price: 20, quantity: 1 },
       { _id: 3 },
     ]);
 
@@ -562,18 +558,29 @@ describe("aggerate", () => {
       { _id: 6 },
     ]);
 
-    console.log(InventoryModel.collection.name);
     const res = await OrderModel.aggregate([
       {
         $lookup: {
           from: InventoryModel.collection.name,
-          localField: "item",
-          foreignField: "sku",
-          as: "inventory_docs",
+          let: { price: "$price", name: "$item" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$sku", "$$name"] },
+                    { $gte: ["$instock", "$$price"] },
+                  ],
+                },
+              },
+            },
+            // { $project: { sku: 0, _id: 0 } },
+          ],
+          as: "stockdata",
         },
       },
     ]);
-    console.log("lookup res:", res);
+    console.log("res: ", res);
   });
 
   test("merge", async () => {
@@ -608,7 +615,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log("res: ", res);
+    //
 
     //
     const OrderModel = require("../model/order");
@@ -643,8 +650,6 @@ describe("aggerate", () => {
       },
       { $project: { fromItems: 0 } },
     ]);
-
-    console.log(res2);
   });
 });
 

@@ -8,6 +8,7 @@ const inventorySchema = new Schema({
   sizes: Array,
   price: Number,
   sku: String,
+  instock: Number,
 });
 
 const InventoryModel = mongoose.model("inventory", inventorySchema);
