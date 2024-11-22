@@ -12,6 +12,7 @@ const OrderSchema = new Mongoose.Schema({
   price: Number,
   quantity: Number,
   date: Date,
+  item: Array,
 });
 
 const OrderModel = Mongoose.model("Order", OrderSchema);

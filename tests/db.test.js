@@ -6,10 +6,11 @@ const { Story, Person } = require("../model/populate");
 // const { describe } = require("node:test");
 
 let mongoServer = null;
+let db = null;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
-  const db = await mongoose.connect(mongoServer.getUri(), {
+  db = await mongoose.connect(mongoServer.getUri(), {
     dbName: "verifyMASTER",
   });
 
@@ -505,6 +506,74 @@ describe("aggerate", () => {
       },
     ]);
     console.log("res: ", res);
+  });
+
+  test("near", async () => {
+    const PlaceModel = require("../model/place");
+    await PlaceModel.insertMany([
+      {
+        name: "Central Park",
+        location: { type: "Point", coordinates: [-73.97, 40.77] },
+        category: "Parks",
+      },
+      {
+        name: "Sara D. Roosevelt Park",
+        location: { type: "Point", coordinates: [-73.9928, 40.7193] },
+        category: "Parks",
+      },
+      {
+        name: "Polo Grounds",
+        location: { type: "Point", coordinates: [-73.9375, 40.8303] },
+        category: "Stadiums",
+      },
+    ]);
+
+    const res = await PlaceModel.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [-73.99279, 40.719296] },
+          distanceField: "dist.calculated",
+          maxDistance: 2,
+          query: { category: "Parks" },
+          includeLocs: "dist.location",
+          spherical: true,
+        },
+      },
+    ]);
+    console.log("place:", res);
+  });
+
+  test("lookup", async () => {
+    const OrderModel = require("../model/order");
+    const InventoryModel = require("../model/inventory");
+
+    await OrderModel.insertMany([
+      { _id: 1, item: ["almonds"], price: 12, quantity: 2 },
+      { _id: 2, item: ["pecans", "bread"], price: 20, quantity: 1 },
+      { _id: 3 },
+    ]);
+
+    await InventoryModel.insertMany([
+      { _id: 1, sku: "almonds", description: "product 1", instock: 120 },
+      { _id: 2, sku: "bread", description: "product 2", instock: 80 },
+      { _id: 3, sku: "cashews", description: "product 3", instock: 60 },
+      { _id: 4, sku: "pecans", description: "product 4", instock: 70 },
+      { _id: 5, sku: null, description: "Incomplete" },
+      { _id: 6 },
+    ]);
+
+    console.log(InventoryModel.collection.name);
+    const res = await OrderModel.aggregate([
+      {
+        $lookup: {
+          from: InventoryModel.collection.name,
+          localField: "item",
+          foreignField: "sku",
+          as: "inventory_docs",
+        },
+      },
+    ]);
+    console.log("lookup res:", res);
   });
 });
 

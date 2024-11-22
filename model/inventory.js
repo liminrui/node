@@ -7,6 +7,7 @@ const inventorySchema = new Schema({
   item: String,
   sizes: Array,
   price: Number,
+  sku: String,
 });
 
 const InventoryModel = mongoose.model("inventory", inventorySchema);
