@@ -575,29 +575,77 @@ describe("aggerate", () => {
     ]);
     console.log("lookup res:", res);
   });
-});
 
-// 只运行这一条
-test("db test && instance method", async () => {
-  await UserModel.deleteOne({ username: "lmr" });
+  test("merge", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      {
+        _id: 1,
+        year: 2017,
+        item: "A",
+        quantity: { "2017Q1": 500, "2017Q2": 500 },
+      },
+      {
+        _id: 2,
+        year: 2016,
+        item: "A",
+        quantity: { "2016Q1": 400, "2016Q2": 300, "2016Q3": 0, "2016Q4": 0 },
+      },
+      { _id: 3, year: 2017, item: "B", quantity: { "2017Q1": 300 } },
+      {
+        _id: 4,
+        year: 2016,
+        item: "B",
+        quantity: { "2016Q3": 100, "2016Q4": 250 },
+      },
+    ]);
 
-  const user = new UserModel({
-    username: "lmr",
-    password: "123456",
+    const res = await SaleModel.aggregate([
+      {
+        $group: {
+          _id: "$item",
+          mergedSales: { $mergeObjects: "$quantity" },
+        },
+      },
+    ]);
+    // console.log("res: ", res);
+
+    //
+    const OrderModel = require("../model/order");
+    const ItemModel = require("../model/items");
+
+    await ItemModel.insertMany([
+      { _id: 1, item: "abc", description: "product 1", instock: 120 },
+      { _id: 2, item: "def", description: "product 2", instock: 80 },
+      { _id: 3, item: "jkl", description: "product 3", instock: 60 },
+    ]);
+
+    await OrderModel.insertMany([
+      { _id: 1, item: "abc", price: 12, ordered: 2 },
+      { _id: 2, item: "jkl", price: 20, ordered: 1 },
+    ]);
+
+    const res2 = await OrderModel.aggregate([
+      {
+        $lookup: {
+          from: ItemModel.collection.name,
+          localField: "item", // field in the orders collection
+          foreignField: "item", // field in the items collection
+          as: "fromItems",
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [{ $arrayElemAt: ["$fromItems", 0] }, "$$ROOT"],
+          },
+        },
+      },
+      { $project: { fromItems: 0 } },
+    ]);
+
+    console.log(res2);
   });
-
-  await user.save();
-
-  const userItem = await UserModel.findOne({ username: "lmr" });
-
-  //   expect(userItem.password).toBe("123456");
-
-  const users = await UserModel.find();
-
-  expect(users.length).toBe(1);
-  expect(users[0].username).toBe("lmr");
-
-  //   expect(user.peronInfo).toBe("my name is :lmr and my pwd is 123456");
 });
 
 test("bcrypt password", async () => {
