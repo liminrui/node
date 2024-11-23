@@ -58,7 +58,7 @@ describe("populate", () => {
     const author = new Person({
       _id: new mongoose.Types.ObjectId(),
       name: "Ian Fleming",
-      age: 50,
+      age: 40,
     });
 
     await author.save();
