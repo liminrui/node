@@ -294,7 +294,7 @@ describe("aggerate", () => {
       {
         $bucketAuto: {
           groupBy: "$year_born",
-          buckets: 5,
+          buckets: 4,
         },
       },
     ]);
