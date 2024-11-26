@@ -410,7 +410,7 @@ describe("aggerate", () => {
     const res = await ArtWorkModel.aggregate([
       {
         $facet: {
-          sortByTags: [{ $unwind: "$tags" }, { $sortByCount: "$tags" }],
+          sortByTags: [{ $unwind: "$tags" }, { $sortByCount: "$tags" }], // 输出[{ _id: "$tags", count: <value> }]
           "categorizedByYears(Auto)": [
             {
               $bucketAuto: {
@@ -497,7 +497,7 @@ describe("aggerate", () => {
           },
           output: {
             score: {
-              method: "locf",
+              method: "locf", // 如果填写的字段包含 null 和非空值，locf 会根据 sortBy 排序将 null 和缺失值设置为该字段的最后一个已知非空值。
             },
           },
         },
@@ -533,7 +533,7 @@ describe("aggerate", () => {
           maxDistance: 2,
           query: { category: "Parks" },
           includeLocs: "dist.location",
-          spherical: true,
+          spherical: true, // 使用球面坐标
         },
       },
     ]);
@@ -554,8 +554,8 @@ describe("aggerate", () => {
       { _id: 2, sku: "bread", description: "product 2", instock: 80 },
       { _id: 3, sku: "cashews", description: "product 3", instock: 60 },
       { _id: 4, sku: "pecans", description: "product 4", instock: 70 },
-      { _id: 5, sku: null, description: "Incomplete" },
-      { _id: 6 },
+      // { _id: 5, sku: null, description: "Incomplete" },
+      // { _id: 6 },
     ]);
 
     const res = await OrderModel.aggregate([
@@ -642,6 +642,7 @@ describe("aggerate", () => {
         },
       },
       {
+        // { $replaceRoot: { newRoot: <replacementDocument> } }
         $replaceRoot: {
           newRoot: {
             $mergeObjects: [{ $arrayElemAt: ["$fromItems", 0] }, "$$ROOT"],
@@ -650,6 +651,50 @@ describe("aggerate", () => {
       },
       { $project: { fromItems: 0 } },
     ]);
+  });
+
+  test("sort", async () => {
+    const RestaurantModel = require("../model/restaurant");
+    await RestaurantModel.insertMany([
+      { _id: 1, name: "Central Park Cafe", borough: "Manhattan" },
+      { _id: 2, name: "Rock A Feller Bar and Grill", borough: "Queens" },
+      { _id: 3, name: "Empire State Pub", borough: "Brooklyn" },
+      { _id: 4, name: "Stan's Pizzaria", borough: "Manhattan" },
+      { _id: 5, name: "Jane's Deli", borough: "Brooklyn" },
+    ]);
+
+    const res = await RestaurantModel.aggregate([
+      {
+        /**
+         * 如果对多个字段进行排序，则按从左到右的顺序进行排序。例如，在上面的表单中，文档首先按 <field1> 排序。然后，具有相同 <field1> 值的文档将按 <field2> 进一步排序。
+         */
+        $sort: {
+          borough: 1,
+          _id: -1,
+        },
+      },
+    ]);
+    // console.log(res);
+
+    // 数组排序
+    /**
+     *  在升序排序中，排序键是数组中的最低值。
+        在降序排序中，排序键是数组中的最高值。
+     */
+    const ShoeModel = require("../model/shoe");
+    await ShoeModel.insertMany([
+      { _id: "A", sizes: [7, 11] },
+      { _id: "B", sizes: [8, 9, 10] },
+    ]);
+
+    const res2 = await ShoeModel.aggregate([
+      {
+        $sort: {
+          sizes: 1,
+        },
+      },
+    ]);
+    console.log("res: ", res2);
   });
 });
 
