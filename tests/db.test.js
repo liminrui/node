@@ -695,6 +695,16 @@ describe("aggerate", () => {
       },
     ]);
     console.log("res: ", res2);
+
+    const res3 = await ShoeModel.aggregate([
+      {
+        $sort: {
+          sizes: -1,
+        },
+      },
+    ]);
+    console.log("res3: ", res3);
+    // console.log();
   });
 });
 
@@ -729,4 +739,28 @@ test("bcrypt password", async () => {
       password: user3.password,
     })
   ).toBe("密码错误");
+});
+
+test("text", async () => {
+  const ArticleModel = require("../model/article");
+  await ArticleModel.insertMany([
+    { _id: 1, subject: "coffee", author: "xyz", views: 50 },
+    { _id: 2, subject: "Coffee Shopping", author: "efg", views: 5 },
+    { _id: 3, subject: "Baking a cake", author: "abc", views: 90 },
+    { _id: 4, subject: "baking", author: "xyz", views: 100 },
+    { _id: 5, subject: "Café Con Leche", author: "abc", views: 200 },
+    { _id: 6, subject: "Сырники", author: "jkl", views: 80 },
+    { _id: 7, subject: "coffee and cream", author: "efg", views: 10 },
+    { _id: 8, subject: "Cafe con Leche", author: "xyz", views: 10 },
+  ]);
+
+  const res = await ArticleModel.find({ $text: { $search: "coffee" } });
+
+  console.log(res);
+
+  // 以下示例指定由空格分隔的三个搜索词组成的 $search 字符串 "bake coffee cake"
+  const res1 = await ArticleModel.find({
+    $text: { $search: "bake coffee cake" },
+  });
+  console.log("res1: ", res1);
 });
