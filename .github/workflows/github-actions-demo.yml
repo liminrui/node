@@ -18,17 +18,19 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - run: echo "${{github.token}}"
+      - name: output npm_token
+        run: echo "${{ secrets.NPM_TOKEN }}"
   build-and-deploy:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
-      
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23.x'
+          node-version: "23.x"
 
       - name: install
         run: npm i
@@ -41,7 +43,7 @@ jobs:
       #   uses: codecov/test-results-action@v1
       #   with:
       #     token: ${{ secrets.CODECOV_TOKEN }}
-        
+
       - name: Semantic Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
