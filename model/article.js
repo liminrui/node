@@ -7,8 +7,9 @@ const ArticleSchema = new Schema({
   subject: String,
   author: String,
   views: Number,
+  title: String,
 });
 
-ArticleSchema.index({ subject: "text" });
+ArticleSchema.index({ subject: "text", title: "text" });
 
 module.exports = mongoose.model("article", ArticleSchema);

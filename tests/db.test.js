@@ -580,7 +580,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res);
   });
 
   test("merge", async () => {
@@ -674,7 +673,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log(res);
+    //
 
     // 数组排序
     /**
@@ -694,7 +693,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res2);
 
     const res3 = await ShoeModel.aggregate([
       {
@@ -703,8 +701,8 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res3: ", res3);
-    // console.log();
+
+    //
   });
 });
 
@@ -756,11 +754,63 @@ test("text", async () => {
 
   const res = await ArticleModel.find({ $text: { $search: "coffee" } });
 
-  console.log(res);
-
   // 以下示例指定由空格分隔的三个搜索词组成的 $search 字符串 "bake coffee cake"
   const res1 = await ArticleModel.find({
     $text: { $search: "bake coffee cake" },
   });
+
+  // 以下示例匹配短语 coffee shop和Cafe con Leche 。这是两个短语的逻辑 OR。
+  const res2 = await ArticleModel.find({
+    $text: { $search: "'coffee shop' 'Cafe con Leche'" },
+  });
+
+  // 以下示例匹配包含单词 coffee 但不包含搜索词 shop 的文档
+  const res3 = await ArticleModel.find({
+    $text: { $search: "Coffee -shop", $caseSensitive: true },
+  });
+  console.log("res3: ", res3);
+});
+
+test("meta", async () => {
+  const ArticleModel = require("../model/article");
+
+  await ArticleModel.insertMany([
+    { _id: 1, title: "cakes and ale" },
+    { _id: 2, title: "more cakes" },
+    { _id: 3, title: "bread" },
+    { _id: 4, title: "some cakes" },
+    { _id: 5, title: "two cakes to go" },
+    { _id: 6, title: "pie" },
+  ]);
+
+  // 返回与每份匹配文档相应的 $text 查询关联的得分。文本得分表示文档与搜索词的匹配程度。 { $meta: "textScore" } 必须与 $text 查询结合使用。
+  const res = await ArticleModel.find(
+    { $text: { $search: "cake" } },
+    { score: { $meta: "textScore" } }
+  );
+  // console.log("res: ", res);
+
+  const OrderModel = require("../model/order");
+  await OrderModel.insertMany([
+    { item: "abc", price: 12, quantity: 2, type: "apparel" },
+    { item: "jkl", price: 23, quantity: 1, type: "electronics" },
+    { item: "abc", price: 11, quantity: 5, type: "apparel" },
+  ]);
+
+  // err! not work
+  // const res1 = await OrderModel.find(
+  //   { type: "apparel" },
+  //   { idxKey: { $meta: "indexKey" } }
+  // );
+  const res1 = await OrderModel.aggregate([
+    {
+      $match: { type: "apparel" },
+    },
+    {
+      $addFields: {
+        idx: { $meta: "indexKey" },
+      },
+    },
+  ]);
   console.log("res1: ", res1);
 });

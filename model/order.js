@@ -6,7 +6,7 @@
 const Mongoose = require("mongoose");
 
 const OrderSchema = new Mongoose.Schema({
-  _id: Number,
+  // _id: Number,
   name: String,
   size: String,
   price: Number,
@@ -14,7 +14,10 @@ const OrderSchema = new Mongoose.Schema({
   date: Date,
   item: String,
   ordered: Number,
+  type: String,
 });
+
+OrderSchema.index({ item: 1, type: 1 });
 
 const OrderModel = Mongoose.model("Order", OrderSchema);
 
