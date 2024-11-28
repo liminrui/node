@@ -19,8 +19,8 @@ jobs:
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - run: echo "${{github.token}}"
       - name: output npm_token
-        run: echo "${{ secrets.NPM_PUBLISH }}"
-      - run: echo "${{ secrets.NPM_TOKEN }}"
+        # run: echo "${{ secrets.NPM_PUBLISH }}"
+        run: echo "${{ secrets.NPM_TOKEN }}"
   build-and-deploy:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
     runs-on: ubuntu-latest
