@@ -704,6 +704,126 @@ describe("aggerate", () => {
 
     //
   });
+
+  test("group", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      {
+        _id: 1,
+        item: "abc",
+        price: 10,
+        quantity: 2,
+        date: "2014-03-01T08:00:00Z",
+      },
+      {
+        _id: 2,
+        item: "jkl",
+        price: 20,
+        quantity: 1,
+        date: "2014-03-01T09:00:00Z",
+      },
+      {
+        _id: 3,
+        item: "xyz",
+        price: 5,
+        quantity: 10,
+        date: "2014-03-15T09:00:00Z",
+      },
+      {
+        _id: 4,
+        item: "xyz",
+        price: 5,
+        quantity: 20,
+        date: "2014-04-04T11:21:39.736Z",
+      },
+      {
+        _id: 5,
+        item: "abc",
+        price: 10,
+        quantity: 10,
+        date: "2014-04-04T21:23:13.331Z",
+      },
+      {
+        _id: 6,
+        item: "def",
+        price: 7.5,
+        quantity: 5,
+        date: "2015-06-04T05:08:13Z",
+      },
+      {
+        _id: 7,
+        item: "def",
+        price: 7.5,
+        quantity: 10,
+        date: "2015-09-10T08:43:00Z",
+      },
+      {
+        _id: 8,
+        item: "abc",
+        price: 10,
+        quantity: 5,
+        date: "2016-02-06T20:20:13Z",
+      },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: new Date("2014-01-01"),
+            $lt: new Date("2015-01-01"),
+          },
+        },
+      },
+      // Second Stage
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          totalSaleAmount: { $sum: { $multiply: ["$price", "$quantity"] } },
+          averageQuantity: { $avg: "$quantity" },
+          count: { $sum: 1 },
+        },
+      },
+      // Third Stage
+      {
+        $sort: { totalSaleAmount: -1 },
+      },
+    ]);
+
+    // console.log("res: ", res);
+
+    // 下面的聚合操作指定了 null 的 _id 组，计算集合中所有文档的总销售额、平均数量和计数
+    const res2 = await SaleModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSaleAmount: { $sum: { $multiply: ["$price", "$quantity"] } },
+          averageQuantity: { $avg: "$quantity" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    // console.log("res2: ", res2);
+
+    const BookModel = require("../model/book");
+    await BookModel.insertMany([
+      { _id: 8751, title: "The Banquet", author: "Dante", copies: 2 },
+      { _id: 8752, title: "Divine Comedy", author: "Dante", copies: 1 },
+      { _id: 8645, title: "Eclogues", author: "Dante", copies: 2 },
+      { _id: 7000, title: "The Odyssey", author: "Homer", copies: 10 },
+      { _id: 7020, title: "Iliad", author: "Homer", copies: 10 },
+    ]);
+
+    const res3 = await BookModel.aggregate([
+      { $group: { _id: "$author", books: { $push: "$$ROOT" } } },
+      {
+        $addFields: {
+          totalCopies: { $sum: "$books.copies" },
+        },
+      },
+    ]);
+    console.log("res3: ", JSON.stringify(res3, 4));
+  });
 });
 
 test("bcrypt password", async () => {
