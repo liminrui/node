@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const UserModel = require("../model/user");
 const genUserData = require("../utils/gen");
 const { Story, Person } = require("../model/populate");
+const OrderModel = require("../model/order");
 // const { describe } = require("node:test");
 
 let mongoServer = null;
@@ -540,46 +541,157 @@ describe("aggerate", () => {
   });
 
   test("lookup", async () => {
-    const OrderModel = require("../model/order");
-    const InventoryModel = require("../model/inventory");
+    // const OrderModel = require("../model/order");
+    // const InventoryModel = require("../model/inventory");
 
-    await OrderModel.insertMany([
-      { _id: 1, item: "almonds", price: 12, quantity: 2 },
-      { _id: 2, item: "pecans", price: 20, quantity: 1 },
-      { _id: 3 },
+    // await OrderModel.insertMany([
+    //   { _id: 1, item: "almonds", price: 12, quantity: 2 },
+    //   { _id: 2, item: "pecans", price: 20, quantity: 1 },
+    //   { _id: 3 },
+    // ]);
+
+    // await InventoryModel.insertMany([
+    //   { _id: 1, sku: "almonds", description: "product 1", instock: 120 },
+    //   { _id: 2, sku: "bread", description: "product 2", instock: 80 },
+    //   { _id: 3, sku: "cashews", description: "product 3", instock: 60 },
+    //   { _id: 4, sku: "pecans", description: "product 4", instock: 70 },
+    //   // { _id: 5, sku: null, description: "Incomplete" },
+    //   // { _id: 6 },
+    // ]);
+
+    // const res = await OrderModel.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: InventoryModel.collection.name,
+    //       let: { price: "$price", name: "$item" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: {
+    //               $and: [
+    //                 { $eq: ["$sku", "$$name"] },
+    //                 { $gte: ["$instock", "$$price"] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //         // { $project: { sku: 0, _id: 0 } },
+    //       ],
+    //       as: "stockdata",
+    //     },
+    //   },
+    // ]);
+
+    const AbsenceModel = require("../model/absence");
+    await AbsenceModel.insertMany([
+      {
+        _id: 1,
+        student: "Ann Aardvark",
+        sickdays: [new Date("2018-05-01"), new Date("2018-08-23")],
+      },
+      {
+        _id: 2,
+        student: "Zoe Zebra",
+        sickdays: [new Date("2018-02-01"), new Date("2018-05-23")],
+      },
     ]);
 
-    await InventoryModel.insertMany([
-      { _id: 1, sku: "almonds", description: "product 1", instock: 120 },
-      { _id: 2, sku: "bread", description: "product 2", instock: 80 },
-      { _id: 3, sku: "cashews", description: "product 3", instock: 60 },
-      { _id: 4, sku: "pecans", description: "product 4", instock: 70 },
-      // { _id: 5, sku: null, description: "Incomplete" },
-      // { _id: 6 },
+    const HolidayModel = require("../model/holiday");
+    await HolidayModel.insertMany([
+      { _id: 1, year: 2018, name: "New Years", date: new Date("2018-01-01") },
+      { _id: 2, year: 2018, name: "Pi Day", date: new Date("2018-03-14") },
+      {
+        _id: 3,
+        year: 2018,
+        name: "Ice Cream Day",
+        date: new Date("2018-07-15"),
+      },
+      { _id: 4, year: 2017, name: "New Years", date: new Date("2017-01-01") },
+      {
+        _id: 5,
+        year: 2017,
+        name: "Ice Cream Day",
+        date: new Date("2017-07-16"),
+      },
     ]);
 
-    const res = await OrderModel.aggregate([
+    const res2 = await AbsenceModel.aggregate([
       {
         $lookup: {
-          from: InventoryModel.collection.name,
-          let: { price: "$price", name: "$item" },
+          from: HolidayModel.collection.name,
           pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$sku", "$$name"] },
-                    { $gte: ["$instock", "$$price"] },
-                  ],
-                },
-              },
-            },
-            // { $project: { sku: 0, _id: 0 } },
+            { $match: { year: 2018 } },
+            // 两者写法等价
+            // { $project: { _id: 0, date: { name: "$name", date: "$date" } } },
+            // { $replaceRoot: { newRoot: "$date" } },
+            { $project: { _id: 0, name: "$name", date: "$date" } },
           ],
-          as: "stockdata",
+          as: "holidays",
         },
       },
     ]);
+    // console.log("res2: ", JSON.stringify(res2));
+
+    const RestaurantModel = require("../model/restaurant");
+    const ItemModel = require("../model/items");
+
+    await RestaurantModel.insertMany([
+      {
+        _id: 1,
+        name: "American Steak House",
+        food: ["filet", "sirloin"],
+        beverages: ["beer", "wine"],
+      },
+      {
+        _id: 2,
+        name: "Honest John Pizza",
+        food: ["cheese pizza", "pepperoni pizza"],
+        beverages: ["soda"],
+      },
+    ]);
+
+    await ItemModel.insertMany([
+      {
+        _id: 1,
+        item: "filet",
+        restaurant_name: "American Steak House",
+      },
+      {
+        _id: 2,
+        item: "cheese pizza",
+        restaurant_name: "Honest John Pizza",
+        drink: "lemonade",
+      },
+      {
+        _id: 3,
+        item: "cheese pizza",
+        restaurant_name: "Honest John Pizza",
+        drink: "soda",
+      },
+    ]);
+
+    const res4 = await ItemModel.aggregate([
+      {
+        $lookup: {
+          from: RestaurantModel.collection.name,
+          localField: "restaurant_name",
+          foreignField: "name",
+          let: {
+            drink_order: "$drink",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$$drink_order", "$beverages"] },
+              },
+            },
+          ],
+          as: "matches",
+        },
+      },
+    ]);
+
+    console.log(JSON.stringify(res4, 4));
   });
 
   test("merge", async () => {
