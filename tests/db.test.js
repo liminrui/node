@@ -16,6 +16,7 @@ beforeAll(async () => {
   });
 
   expect(db).toBeDefined();
+  console.log("db: ", db);
 });
 
 afterAll(async () => {
@@ -726,42 +727,45 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res: ", res);
     //
 
+    // await SaleModel.aggregate()
+
     //
-    const OrderModel = require("../model/order");
-    const ItemModel = require("../model/items");
+    // const OrderModel = require("../model/order");
+    // const ItemModel = require("../model/items");
 
-    await ItemModel.insertMany([
-      { _id: 1, item: "abc", description: "product 1", instock: 120 },
-      { _id: 2, item: "def", description: "product 2", instock: 80 },
-      { _id: 3, item: "jkl", description: "product 3", instock: 60 },
-    ]);
+    // await ItemModel.insertMany([
+    //   { _id: 1, item: "abc", description: "product 1", instock: 120 },
+    //   { _id: 2, item: "def", description: "product 2", instock: 80 },
+    //   { _id: 3, item: "jkl", description: "product 3", instock: 60 },
+    // ]);
 
-    await OrderModel.insertMany([
-      { _id: 1, item: "abc", price: 12, ordered: 2 },
-      { _id: 2, item: "jkl", price: 20, ordered: 1 },
-    ]);
+    // await OrderModel.insertMany([
+    //   { _id: 1, item: "abc", price: 12, ordered: 2 },
+    //   { _id: 2, item: "jkl", price: 20, ordered: 1 },
+    // ]);
 
-    const res2 = await OrderModel.aggregate([
-      {
-        $lookup: {
-          from: ItemModel.collection.name,
-          localField: "item", // field in the orders collection
-          foreignField: "item", // field in the items collection
-          as: "fromItems",
-        },
-      },
-      {
-        // { $replaceRoot: { newRoot: <replacementDocument> } }
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [{ $arrayElemAt: ["$fromItems", 0] }, "$$ROOT"],
-          },
-        },
-      },
-      { $project: { fromItems: 0 } },
-    ]);
+    // const res2 = await OrderModel.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: ItemModel.collection.name,
+    //       localField: "item", // field in the orders collection
+    //       foreignField: "item", // field in the items collection
+    //       as: "fromItems",
+    //     },
+    //   },
+    //   {
+    //     // { $replaceRoot: { newRoot: <replacementDocument> } }
+    //     $replaceRoot: {
+    //       newRoot: {
+    //         $mergeObjects: [{ $arrayElemAt: ["$fromItems", 0] }, "$$ROOT"],
+    //       },
+    //     },
+    //   },
+    //   { $project: { fromItems: 0 } },
+    // ]);
   });
 
   test("sort", async () => {
@@ -935,6 +939,76 @@ describe("aggerate", () => {
       },
     ]);
     console.log("res3: ", JSON.stringify(res3, 4));
+  });
+
+  test("project", async () => {
+    const BookModel = require("../model/book");
+
+    await BookModel.insertMany([
+      {
+        _id: 1,
+        title: "abc123",
+        isbn: "0001122223334",
+        author: { last: "zzz", first: "aaa" },
+        copies: 5,
+        lastModified: Date("2016-07-28"),
+      },
+      {
+        _id: 2,
+        title: "Baked Goods",
+        isbn: "9999999999999",
+        author: { last: "xyz", first: "abc", middle: "" },
+        copies: 2,
+        lastModified: Date("2017-07-21"),
+      },
+      {
+        _id: 3,
+        title: "Ice Cream Cakes",
+        isbn: "8888888888888",
+        author: { last: "xyz", first: "abc", middle: "mmm" },
+        copies: 5,
+        lastModified: Date("2017-07-22"),
+      },
+    ]);
+
+    const res = await BookModel.aggregate([
+      {
+        $project: {
+          title: 1,
+          "author.first": 1,
+          "author.last": 1,
+          "author.middle": {
+            $cond: {
+              // 条件判断
+              if: { $eq: ["", "$author.middle"] },
+              then: "$$REMOVE",
+              else: "$author.middle",
+            },
+          },
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
+
+    // 添加字段并切割字符串
+    const res2 = await BookModel.aggregate([
+      {
+        $project: {
+          title: 1,
+          isbn: {
+            prefix: { $substr: ["$isbn", 0, 3] },
+            group: { $substr: ["$isbn", 3, 2] },
+            publisher: { $substr: ["$isbn", 5, 4] },
+            title: { $substr: ["$isbn", 9, 3] },
+            checkDigit: { $substr: ["$isbn", 12, 1] },
+          },
+          lastName: "$author.last",
+          copiesSold: "$copies",
+        },
+      },
+    ]);
+    console.log("res2: ", res2);
   });
 });
 

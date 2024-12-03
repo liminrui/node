@@ -5,8 +5,11 @@ const Schema = mongoose.Schema;
 const BookSchema = new Schema({
   _id: Number,
   title: String,
-  author: String,
+  _author: String,
   copies: Number,
+  isbn: String,
+  lastModified: String,
+  author: Object,
 });
 
 const BookModel = mongoose.model("book", BookSchema);
