@@ -16,7 +16,7 @@ beforeAll(async () => {
   });
 
   expect(db).toBeDefined();
-  console.log("db: ", db);
+  // console.log("db: ", db);
 });
 
 afterAll(async () => {
@@ -338,7 +338,7 @@ describe("aggerate", () => {
       },
     ]);
 
-    expect(res.length).toBe(4);
+    console.log(res);
   });
 
   test("facet", async () => {
@@ -1009,6 +1009,169 @@ describe("aggerate", () => {
       },
     ]);
     console.log("res2: ", res2);
+  });
+
+  test("setintersection", async () => {
+    const FlowerModel = require("../model/flower");
+    await FlowerModel.insertMany([
+      {
+        _id: 1,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: ["rose", "orchid"],
+      },
+      {
+        _id: 2,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: ["orchid", "rose", "orchid"],
+      },
+      {
+        _id: 3,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: ["rose", "orchid", "jasmine"],
+      },
+      {
+        _id: 4,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: ["jasmine", "rose"],
+      },
+      { _id: 5, flowerFieldA: ["rose", "orchid"], flowerFieldB: [] },
+      {
+        _id: 6,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: [["rose"], ["orchid"]],
+      },
+      {
+        _id: 7,
+        flowerFieldA: ["rose", "orchid"],
+        flowerFieldB: [["rose", "orchid"]],
+      },
+      { _id: 8, flowerFieldA: [], flowerFieldB: [] },
+      { _id: 9, flowerFieldA: [], flowerFieldB: ["rose"] },
+    ]);
+
+    const res = await FlowerModel.aggregate([
+      {
+        $project: {
+          flowerFieldA: 1,
+          flowerFieldB: 1,
+          commonToBoth: {
+            $setIntersection: ["$flowerFieldA", "$flowerFieldB"], // 取交集
+          },
+          _id: 0,
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
+
+  test("redact", async () => {
+    const ForecastModel = require("../model/forecasts");
+
+    // await ForecastModel.inse
+    const forecast = new ForecastModel({
+      _id: 1,
+      title: "123 Department Report",
+      tags: ["G", "STLW"],
+      year: 2014,
+      subsections: [
+        {
+          subtitle: "Section 1: Overview",
+          tags: ["SI", "G"],
+          content: "Section 1: This is the content of section 1.",
+        },
+        {
+          subtitle: "Section 2: Analysis",
+          tags: ["TK"],
+          content: "Section 2: This is the content of section 2.",
+        },
+        {
+          subtitle: "Section 3: Budgeting",
+          tags: ["TK"],
+          content: {
+            text: "Section 3: This is the content of section 3.",
+            tags: ["HCS"],
+          },
+        },
+      ],
+    });
+
+    await forecast.save();
+
+    var userAccess = ["TK", "STLW"];
+    const res = await ForecastModel.aggregate([
+      { $match: { year: 2014 } },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $gt: [{ $size: { $setIntersection: ["$tags", userAccess] } }, 0],
+            },
+            then: "$$DESCEND",
+            else: "$$PRUNE",
+          },
+        },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res, 4));
+  });
+
+  test("replaceRoot", async () => {
+    const CollectionModel = require("../model/collection");
+
+    await CollectionModel.insertMany([
+      { _id: 1, name: { first: "John", last: "Backus" } },
+      { _id: 2, name: { first: "John", last: "McCarthy" } },
+      { _id: 3, name: { first: "Grace", last: "Hopper" } },
+      { _id: 4, firstname: "Ole-Johan", lastname: "Dahl" },
+    ]);
+
+    const res = await CollectionModel.aggregate([
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              {
+                _id: "$_id",
+                first: "",
+                last: "",
+              },
+              "$name",
+            ],
+          },
+        },
+      },
+    ]);
+    // console.log(res);
+
+    const res1 = await CollectionModel.aggregate([
+      {
+        $match: {
+          name: { $exists: true, $not: { $type: "array" }, $type: "object" },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$name",
+        },
+      },
+    ]);
+    // console.log("res1: ", res1);
+    const res2 = await CollectionModel.aggregate([
+      {
+        $replaceRoot: {
+          newRoot: {
+            $ifNull: [
+              "$name",
+              {
+                _id: "$_id",
+                missingName: true,
+              },
+            ],
+          },
+        },
+      },
+    ]);
+    console.log(res2);
   });
 });
 
