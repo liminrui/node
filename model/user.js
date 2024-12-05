@@ -5,13 +5,17 @@ const lastMod = require("../plugins/lastMode");
 
 const UserSchema = new Mongoose.Schema(
   {
+    name: String,
+    q1: Boolean,
+    q2: Boolean,
+    _id: Number,
     username: {
       type: String,
-      required: true,
+      // required: true,
     },
     password: {
       type: String,
-      required: true,
+      // required: true,
     },
   },
   {

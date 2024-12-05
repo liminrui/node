@@ -1171,7 +1171,98 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log(res2);
+    // console.log(res2);
+    const ContactModel = require("../model/contact");
+    await ContactModel.insertMany([
+      { _id: 1, name: "Fred", email: "fred@example.net" },
+      { _id: 2, name: "Frank N. Stine", cell: "012-345-9999" },
+      {
+        _id: 3,
+        name: "Gren Dell",
+        home: "987-654-3210",
+        email: "beo@example.net",
+      },
+    ]);
+
+    const res3 = await ContactModel.aggregate([
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              { _id: "", name: "", email: "", cell: "", home: "" },
+              { test: "test" },
+              "$$ROOT",
+            ],
+          },
+        },
+      },
+    ]);
+    console.log("res3: ", res3);
+  });
+
+  test("replaceWith", async () => {
+    const SaleReportModel = require("../model/saleReport");
+
+    await SaleReportModel.insertMany([
+      { _id: 1, quarter: "2019Q1", region: "A", qty: 400 },
+      { _id: 2, quarter: "2019Q1", region: "B", qty: 550 },
+      { _id: 3, quarter: "2019Q1", region: "C", qty: 1000 },
+      { _id: 4, quarter: "2019Q2", region: "A", qty: 660 },
+      { _id: 5, quarter: "2019Q2", region: "B", qty: 500 },
+      { _id: 6, quarter: "2019Q2", region: "C", qty: 1200 },
+    ]);
+
+    const res = await SaleReportModel.aggregate([
+      {
+        $addFields: {
+          obj: { k: "$region", v: "$qty" },
+        },
+      },
+      {
+        $group: {
+          _id: "$quarter",
+          items: {
+            $push: "$obj",
+          },
+        },
+      },
+      {
+        $project: {
+          items2: {
+            $concatArrays: [[{ k: "_id", v: "$_id" }], "$items"],
+          },
+        },
+      },
+      {
+        $replaceWith: {
+          $arrayToObject: "$items2",
+        },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res, 4));
+  });
+
+  test("sample", async () => {
+    // 随机抽样
+    const UserModel = require("../model/user");
+    await UserModel.insertMany([
+      { _id: 1, name: "dave123", q1: true, q2: true },
+      { _id: 2, name: "dave2", q1: false, q2: false },
+      { _id: 3, name: "ahn", q1: true, q2: true },
+      { _id: 4, name: "li", q1: true, q2: false },
+      { _id: 5, name: "annT", q1: false, q2: true },
+      { _id: 6, name: "li", q1: true, q2: true },
+      { _id: 7, name: "ty", q1: false, q2: true },
+    ]);
+
+    const res = await UserModel.aggregate([
+      {
+        $sample: {
+          size: 3,
+        },
+      },
+    ]);
+    console.log("res: ", res);
   });
 });
 
