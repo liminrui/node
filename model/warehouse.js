@@ -7,6 +7,8 @@ const warehhouseSchema = new Schema({
   stock_item: String,
   warehouse: String,
   instock: String,
+  region: String,
+  state: String,
 });
 
 const WarehouseModel = mongoose.model("warehouse", warehhouseSchema);

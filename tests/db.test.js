@@ -16,7 +16,7 @@ beforeAll(async () => {
   });
 
   expect(db).toBeDefined();
-  // console.log("db: ", db);
+  //
 });
 
 afterAll(async () => {
@@ -337,8 +337,6 @@ describe("aggerate", () => {
         $sort: { averagePrice: -1 },
       },
     ]);
-
-    console.log(res);
   });
 
   test("facet", async () => {
@@ -631,7 +629,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log("res2: ", JSON.stringify(res2));
+    //
 
     const RestaurantModel = require("../model/restaurant");
     const ItemModel = require("../model/items");
@@ -691,8 +689,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-
-    console.log(JSON.stringify(res4, 4));
   });
 
   test("merge", async () => {
@@ -727,7 +723,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res);
+
     //
 
     // await SaleModel.aggregate()
@@ -906,7 +902,7 @@ describe("aggerate", () => {
       },
     ]);
 
-    // console.log("res: ", res);
+    //
 
     // 下面的聚合操作指定了 null 的 _id 组，计算集合中所有文档的总销售额、平均数量和计数
     const res2 = await SaleModel.aggregate([
@@ -919,7 +915,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log("res2: ", res2);
+    //
 
     const BookModel = require("../model/book");
     await BookModel.insertMany([
@@ -938,7 +934,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res3: ", JSON.stringify(res3, 4));
   });
 
   test("project", async () => {
@@ -989,8 +984,6 @@ describe("aggerate", () => {
       },
     ]);
 
-    console.log("res: ", res);
-
     // 添加字段并切割字符串
     const res2 = await BookModel.aggregate([
       {
@@ -1008,7 +1001,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res2: ", res2);
   });
 
   test("setintersection", async () => {
@@ -1061,7 +1053,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res);
   });
 
   test("redact", async () => {
@@ -1112,7 +1103,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", JSON.stringify(res, 4));
   });
 
   test("replaceRoot", async () => {
@@ -1141,7 +1131,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log(res);
+    //
 
     const res1 = await CollectionModel.aggregate([
       {
@@ -1155,7 +1145,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log("res1: ", res1);
+    //
     const res2 = await CollectionModel.aggregate([
       {
         $replaceRoot: {
@@ -1171,7 +1161,7 @@ describe("aggerate", () => {
         },
       },
     ]);
-    // console.log(res2);
+    //
     const ContactModel = require("../model/contact");
     await ContactModel.insertMany([
       { _id: 1, name: "Fred", email: "fred@example.net" },
@@ -1197,7 +1187,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res3: ", res3);
   });
 
   test("replaceWith", async () => {
@@ -1239,7 +1228,6 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", JSON.stringify(res, 4));
   });
 
   test("sample", async () => {
@@ -1262,7 +1250,167 @@ describe("aggerate", () => {
         },
       },
     ]);
-    console.log("res: ", res);
+  });
+
+  test("set", async () => {
+    const ScoreModel = require("../model/score");
+
+    await ScoreModel.insertMany([
+      {
+        _id: 1,
+        student: "Maya",
+        homework: [10, 5, 10],
+        quiz: [10, 8],
+        extraCredit: 0,
+      },
+      {
+        _id: 2,
+        student: "Ryan",
+        homework: [5, 6, 5],
+        quiz: [8, 8],
+        extraCredit: 8,
+      },
+    ]);
+
+    const res = await ScoreModel.aggregate([
+      {
+        $match: {
+          _id: 1,
+        },
+      },
+      {
+        $set: {
+          homework: {
+            $concatArrays: ["$homework", [7]],
+          },
+        },
+      },
+    ]);
+
+    const res1 = await ScoreModel.aggregate([
+      {
+        $set: {
+          quizAverage: {
+            $avg: "$quiz",
+          },
+        },
+      },
+    ]);
+  });
+
+  test("sortByCount", async () => {
+    const ExhibitModel = require("../model/exhibit");
+
+    await ExhibitModel.insertMany([
+      {
+        _id: 1,
+        title: "The Pillars of Society",
+        artist: "Grosz",
+        year: 1926,
+        tags: ["painting", "satire", "Expressionism", "caricature"],
+      },
+      {
+        _id: 2,
+        title: "Melancholy III",
+        artist: "Munch",
+        year: 1902,
+        tags: ["woodcut", "Expressionism"],
+      },
+      {
+        _id: 3,
+        title: "Dancer",
+        artist: "Miro",
+        year: 1925,
+        tags: ["oil", "Surrealism", "painting"],
+      },
+      {
+        _id: 4,
+        title: "The Great Wave off Kanagawa",
+        artist: "Hokusai",
+        tags: ["woodblock", "ukiyo-e"],
+      },
+      {
+        _id: 5,
+        title: "The Persistence of Memory",
+        artist: "Dali",
+        year: 1931,
+        tags: ["Surrealism", "painting", "oil"],
+      },
+      {
+        _id: 6,
+        title: "Composition VII",
+        artist: "Kandinsky",
+        year: 1913,
+        tags: ["oil", "painting", "abstract"],
+      },
+      {
+        _id: 7,
+        title: "The Scream",
+        artist: "Munch",
+        year: 1893,
+        tags: ["Expressionism", "painting", "oil"],
+      },
+      {
+        _id: 8,
+        title: "Blue Flower",
+        artist: "O'Keefe",
+        year: 1918,
+        tags: ["abstract", "painting"],
+      },
+    ]);
+
+    const res = await ExhibitModel.aggregate([
+      {
+        $unwind: "$tags",
+      },
+      {
+        $sortByCount: "$tags",
+      },
+    ]);
+  });
+
+  test("unionWith", async () => {
+    const SupplyModel = require("../model/supply");
+    const WarehouseModel = require("../model/warehouse");
+
+    await SupplyModel.insertMany([
+      { _id: 1, supplier: "Aardvark and Sons", state: "Texas" },
+      { _id: 2, supplier: "Bears Run Amok.", state: "Colorado" },
+      { _id: 3, supplier: "Squid Mark Inc. ", state: "Rhode Island" },
+    ]);
+
+    await WarehouseModel.insertMany([
+      { _id: 1, warehouse: "A", region: "West", state: "California" },
+      { _id: 2, warehouse: "B", region: "Central", state: "Colorado" },
+      { _id: 3, warehouse: "C", region: "East", state: "Florida" },
+    ]);
+
+    const res = await SupplyModel.aggregate([
+      {
+        $project: {
+          _id: 0,
+          state: 1,
+        },
+      },
+      {
+        $unionWith: {
+          coll: WarehouseModel.collection.name,
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                state: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$state",
+        },
+      },
+    ]);
   });
 });
 
@@ -1328,7 +1476,6 @@ test("text", async () => {
   const res3 = await ArticleModel.find({
     $text: { $search: "Coffee -shop", $caseSensitive: true },
   });
-  console.log("res3: ", res3);
 });
 
 test("meta", async () => {
@@ -1348,7 +1495,7 @@ test("meta", async () => {
     { $text: { $search: "cake" } },
     { score: { $meta: "textScore" } }
   );
-  // console.log("res: ", res);
+  //
 
   const OrderModel = require("../model/order");
   await OrderModel.insertMany([
@@ -1372,5 +1519,31 @@ test("meta", async () => {
       },
     },
   ]);
-  // console.log("res1: ", res1);
+  //
+});
+
+describe("operation", () => {
+  test("abs", async () => {
+    const TemperatureChangeModel = require("../model/temperatureChange");
+
+    await TemperatureChangeModel.insertMany([
+      { _id: 1, startTemp: 50, endTemp: 80 },
+      { _id: 2, startTemp: 40, endTemp: 40 },
+      { _id: 3, startTemp: 90, endTemp: 70 },
+      { _id: 4, startTemp: 60, endTemp: 70 },
+    ]);
+
+    const res = await TemperatureChangeModel.aggregate([
+      {
+        $project: {
+          delta: {
+            $abs: {
+              $subtract: ["$startTemp", "$endTemp"],
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });
