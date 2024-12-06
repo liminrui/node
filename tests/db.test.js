@@ -1546,4 +1546,96 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("addToSet", async () => {
+    const SaleModel = require("../model/sales");
+
+    await SaleModel.insertMany([
+      {
+        _id: 1,
+        item: "abc",
+        price: 10,
+        quantity: 2,
+        date: new Date("2014-01-01T08:00:00Z"),
+      },
+      {
+        _id: 2,
+        item: "jkl",
+        price: 20,
+        quantity: 1,
+        date: new Date("2014-02-03T09:00:00Z"),
+      },
+      {
+        _id: 3,
+        item: "xyz",
+        price: 5,
+        quantity: 5,
+        date: new Date("2014-02-03T09:05:00Z"),
+      },
+      {
+        _id: 4,
+        item: "abc",
+        price: 10,
+        quantity: 10,
+        date: new Date("2014-02-15T08:00:00Z"),
+      },
+      {
+        _id: 5,
+        item: "xyz",
+        price: 5,
+        quantity: 10,
+        date: new Date("2014-02-15T09:12:00Z"),
+      },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      {
+        $group: {
+          _id: {
+            day: {
+              $dayOfYear: "$date",
+            },
+            year: {
+              $year: "$date",
+            },
+          },
+          itemSole: {
+            $addToSet: "$item",
+          },
+        },
+      },
+      // {},
+    ]);
+    console.log(res);
+  });
+
+  test("elementAtIdx", async () => {
+    const UserModel = require("../model/user");
+
+    await UserModel.insertMany([
+      {
+        _id: 1,
+        name: "dave123",
+        favorites: ["chocolate", "cake", "butter", "apples"],
+      },
+      { _id: 2, name: "li", favorites: ["apples", "pudding", "pie"] },
+      {
+        _id: 3,
+        name: "ahn",
+        favorites: ["pears", "pecans", "chocolate", "cherries"],
+      },
+      { _id: 4, name: "ty", favorites: ["ice cream"] },
+    ]);
+
+    const res = await UserModel.aggregate([
+      {
+        $project: {
+          name: "$name",
+          first: { $arrayElemAt: ["$favorites", 0] },
+          last: { $arrayElemAt: ["$favorites", -1] }, // 倒数
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });

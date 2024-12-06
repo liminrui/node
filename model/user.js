@@ -17,6 +17,7 @@ const UserSchema = new Mongoose.Schema(
       type: String,
       // required: true,
     },
+    favorites: Array,
   },
   {
     virtuals: {
