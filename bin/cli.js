@@ -2,7 +2,6 @@
 const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const { readFile } = require("node:fs/promises");
-const path = require("path");
 
 async function main() {
   const obj = await yargs(hideBin(process.argv))
@@ -24,6 +23,10 @@ async function main() {
       describe: "choose a size",
       choices: ["xs", "s", "m", "l", "xl"],
     })
+    .options("file", {
+      alias: "f",
+      describe: "读取文件",
+    })
     .coerce("file", async (argv) => {
       // console.log("argv: ", argv, __dirname, path.join(__dirname, argv));
       const content = await readFile(argv, "utf8");
@@ -33,4 +36,16 @@ async function main() {
   console.log("obj: ", obj);
 }
 
-main();
+// main();
+
+const _yargs = require("yargs");
+const argv = _yargs
+  .command("get", "make a get HTTP request", {
+    url: {
+      alias: "u",
+      default: "http://yargs.js.org/",
+    },
+  })
+  .help()
+  .parse();
+console.log("argv: ", argv);
