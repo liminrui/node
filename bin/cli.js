@@ -22,6 +22,7 @@ async function main() {
       alias: "s",
       describe: "choose a size",
       choices: ["xs", "s", "m", "l", "xl"],
+      array: true,
     })
     .options("file", {
       alias: "f",
@@ -41,7 +42,12 @@ const cli = require("./command/index");
 
 function command() {
   const _yargs = require("yargs");
-  const argv = _yargs.command(cli.file).command(cli.http).help().parse();
+  const argv = _yargs
+    .command(cli.file)
+    .command(cli.http)
+    .epilogue("for more information, find our manual at http://example.com")
+    .help()
+    .parse();
   console.log("argv: ", argv);
 }
 

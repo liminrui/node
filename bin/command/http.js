@@ -1,5 +1,5 @@
 module.exports = {
-  command: "get",
+  command: "get <key> [value]",
   aliases: ["g"],
   desc: "获取网络请求",
   builder: (yargs) => {
