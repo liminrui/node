@@ -8,6 +8,7 @@ const conditional = require("koa-conditional-get");
 const etag = require("koa-etag");
 // const otp = require("./middleware/koa-otp")("fndsjkfnsdj");
 const mount = require("mount-koa-routes");
+require("./utils/db"); // 引用mongoDB
 
 // const index = require("./routes/index");
 // const users = require("./routes/users");
