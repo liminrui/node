@@ -6,10 +6,11 @@ const bodyparser = require("koa-bodyparser");
 const logger = require("koa-logger");
 const conditional = require("koa-conditional-get");
 const etag = require("koa-etag");
-const otp = require("./middleware/koa-otp")("fndsjkfnsdj");
+// const otp = require("./middleware/koa-otp")("fndsjkfnsdj");
+const mount = require("mount-koa-routes");
 
-const index = require("./routes/index");
-const users = require("./routes/users");
+// const index = require("./routes/index");
+// const users = require("./routes/users");
 
 // error handler
 onerror(app);
@@ -28,7 +29,6 @@ app.use(json());
 app.use(logger());
 app.use(require("koa-static")(__dirname + "/public"));
 
-
 // app.use(otp.encode());
 
 // logger
@@ -36,16 +36,12 @@ app.use(async (ctx, next) => {
   const start = new Date();
   await next();
   const ms = new Date() - start;
-  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
+  console.log("ms: ", ms);
 });
 
-// routes
-app.use(index.routes(), index.allowedMethods());
-app.use(users.routes(), users.allowedMethods());
+mount(app, __dirname + "/routes", process.env.NODE_ENV === "development");
 
 // error-handling
-app.on("error", (err, ctx) => {
-  console.error("server error", err, ctx);
-});
+app.on("error", (err, ctx) => {});
 
 module.exports = app;
