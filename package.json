@@ -2,10 +2,11 @@
   "name": "lmr-node-demo-project",
   "version": "1.0.0",
   "bin": {
-    "node-start": "bin/www.js"
+    "node-start": "bin/www.js",
+    "util": "bin/cli.js"
   },
   "scripts": {
-    "start": "node bin/www",
+    "start": "set NODE_ENV=development && nodemon app.js",
     "dev": "nodemon bin/www",
     "prd": "pm2 start bin/www",
     "test": "jest",
@@ -41,8 +42,10 @@
     "koa-views": "^6.2.0",
     "lmr-node-demo-project": "file:",
     "mongoose": "^8.8.1",
+    "mount-koa-routes": "^2.0.3",
     "notp": "^2.0.3",
     "request-ip": "^3.3.0",
+    "require-directory": "^2.1.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -53,7 +56,8 @@
     "jest-junit": "^16.0.0",
     "mongodb-memory-server": "^10.1.2",
     "nodemon": "^1.19.4",
-    "semantic-release": "^24.2.0"
+    "semantic-release": "^24.2.0",
+    "superkoa": "^1.0.3"
   },
   "config": {
     "commitizen": {

@@ -8,7 +8,7 @@ const UserSchema = new Mongoose.Schema(
     name: String,
     q1: Boolean,
     q2: Boolean,
-    _id: Number,
+    // _id: Number,
     username: {
       type: String,
       // required: true,
