@@ -1718,4 +1718,38 @@ describe("operation", () => {
     ]);
     console.log("res1: ", JSON.stringify(res1));
   });
+
+  test("bottom", async () => {
+    const GameScoreModel = require("../model/gamescore");
+    await GameScoreModel.insertMany([
+      { playerId: "PlayerA", gameId: "G1", score: 31 },
+      { playerId: "PlayerB", gameId: "G1", score: 33 },
+      { playerId: "PlayerC", gameId: "G1", score: 99 },
+      { playerId: "PlayerD", gameId: "G1", score: 1 },
+      { playerId: "PlayerA", gameId: "G2", score: 10 },
+      { playerId: "PlayerB", gameId: "G2", score: 14 },
+      { playerId: "PlayerC", gameId: "G2", score: 66 },
+      { playerId: "PlayerD", gameId: "G2", score: 80 },
+    ]);
+
+    const res = await GameScoreModel.aggregate([
+      {
+        $match: {
+          gameId: "G1",
+        },
+      },
+      {
+        $group: {
+          _id: "$gameId",
+          score: {
+            $bottom: {
+              output: ["$playerId", "$score"],
+              sortBy: { score: -1 },
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });
