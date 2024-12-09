@@ -1638,4 +1638,84 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("array to object", async () => {
+    const InventoryModel = require("../model/inventory");
+
+    // await InventoryModel.insertMany([
+    //   {
+    //     _id: 1,
+    //     item: "ABC1",
+    //     dimensions: [
+    //       { k: "l", v: 25 },
+    //       { k: "w", v: 10 },
+    //       { k: "uom", v: "cm" },
+    //     ],
+    //   },
+    //   {
+    //     _id: 2,
+    //     item: "ABC2",
+    //     dimensions: [
+    //       ["l", 50],
+    //       ["w", 25],
+    //       ["uom", "cm"],
+    //     ],
+    //   },
+    //   {
+    //     _id: 3,
+    //     item: "ABC3",
+    //     dimensions: [
+    //       ["l", 25],
+    //       ["l", "cm"],
+    //       ["l", 50],
+    //     ],
+    //   },
+    // ]);
+
+    // const res = await InventoryModel.aggregate([
+    //   {
+    //     $project: {
+    //       dimensions: { $arrayToObject: "$dimensions" },
+    //     },
+    //   },
+    // ]);
+    // console.log("res: ", res);
+
+    await InventoryModel.insertMany([
+      {
+        _id: 100,
+        item: "ABC1",
+        instock: { warehouse1: 2500, warehouse2: 500 },
+      },
+      { _id: 200, item: "ABC2", instock: { warehouse2: 500, warehouse3: 200 } },
+    ]);
+
+    const res1 = await InventoryModel.aggregate([
+      {
+        $addFields: {
+          instock: {
+            $objectToArray: "$instock",
+          },
+        },
+      },
+      {
+        $addFields: {
+          instock: {
+            $concatArrays: [
+              "$instock",
+              [{ k: "total", v: { $sum: "$instock.v" } }], // 此时的instock是一个数组
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          instock: {
+            $arrayToObject: "$instock",
+          },
+        },
+      },
+    ]);
+    console.log("res1: ", JSON.stringify(res1));
+  });
 });
