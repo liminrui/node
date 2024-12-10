@@ -1752,4 +1752,53 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("contact", async () => {
+    const InventoryModel = require("../model/inventory");
+
+    await InventoryModel.insertMany([
+      { _id: 1, item: "ABC1", quarter: "13Q1", description: "product 1" },
+      { _id: 2, item: "ABC2", quarter: "13Q4", description: "product 2" },
+      { _id: 3, item: "XYZ1", quarter: "14Q2", description: null },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $project: {
+          itemDesc: {
+            $concat: ["$item", "-", "$description"],
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
+
+  test("cond", async () => {
+    const InventoryModel = require("../model/inventory");
+
+    await InventoryModel.insertMany([
+      { _id: 1, item: "abc1", qty: 300 },
+      { _id: 2, item: "abc2", qty: 200 },
+      { _id: 3, item: "xyz1", qty: 250 },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $project: {
+          item: 1,
+          res: {
+            $cond: {
+              if: {
+                $gte: ["$qty", 250],
+              },
+              then: 30,
+              else: 20,
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });
