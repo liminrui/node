@@ -1801,4 +1801,67 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("convert", async () => {
+    const OrderModel = require("../model/order");
+    await OrderModel.insertMany([
+      { _id: 1, item: "apple", qty: 5, price: 10 },
+      { _id: 2, item: "pie", qty: 10, price: 20.0 },
+      { _id: 3, item: "ice cream", qty: 2, price: "4.99" },
+      { _id: 4, item: "almonds" },
+      { _id: 5, item: "bananas", qty: 5000000000, price: 1.25 },
+    ]);
+
+    const priceQtyConversionStage = {
+      $addFields: {
+        convertedPrice: {
+          $convert: {
+            input: "$price",
+            to: "decimal",
+            onError: "Error",
+            onNull: 0,
+          },
+        },
+        convertedQty: {
+          $convert: {
+            input: "$qty",
+            to: "int",
+            onError: {
+              $concat: [
+                "Could not convert ",
+                { $toString: "$qty" },
+                " to type integer.",
+              ],
+            },
+            onNull: "0",
+          },
+        },
+      },
+    };
+    const totalPriceCalculationStage = {
+      $project: {
+        totalPrice: {
+          $switch: {
+            branches: [
+              {
+                case: { $eq: [{ $type: "$convertedPrice" }, "string"] },
+                then: "NaN",
+              },
+              {
+                case: { $eq: [{ $type: "$convertedQty" }, "string"] },
+                then: "NaN",
+              },
+            ],
+            default: { $multiply: ["$convertedPrice", "$convertedQty"] },
+          },
+        },
+      },
+    };
+
+    const res = await OrderModel.aggregate([
+      priceQtyConversionStage,
+      totalPriceCalculationStage,
+    ]);
+    console.log("res: ", res);
+  });
 });

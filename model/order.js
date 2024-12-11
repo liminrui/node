@@ -1,12 +1,7 @@
-/**
- * name: "Pepperoni", size: "small", price: 19,
-     quantity: 10, date: ISODate( "2021-03-13T08:14:30Z" )
- */
-
 const Mongoose = require("mongoose");
-
+// { _id: 5, item: "bananas", qty: 5000000000, price: Decimal128("1.25") }
 const OrderSchema = new Mongoose.Schema({
-  // _id: Number,
+  _id: Number,
   name: String,
   size: String,
   price: Number,
@@ -15,6 +10,7 @@ const OrderSchema = new Mongoose.Schema({
   item: String,
   ordered: Number,
   type: String,
+  qty: Number,
 });
 
 OrderSchema.index({ item: 1, type: 1 });
