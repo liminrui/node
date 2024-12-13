@@ -1967,6 +1967,32 @@ describe("operation", () => {
         },
       },
     ]);
-    console.log("res: ", res);
+
+    const ShipModel = require("../model/shipping");
+    await ShipModel.insertMany([
+      { custId: 456, purchaseDate: new Date("2020-12-31") },
+      { custId: 457, purchaseDate: new Date("2021-02-28") },
+      { custId: 458, purchaseDate: new Date("2021-02-26") },
+    ]);
+
+    const res1 = await ShipModel.aggregate([
+      {
+        $project: {
+          expectedDeliveryDate: {
+            $dateAdd: {
+              startDate: "$purchaseDate",
+              unit: "day",
+              amount: 3,
+            },
+          },
+        },
+      },
+      {
+        $merge: ShipModel.collection.name,
+      },
+    ]);
+    console.log("res: ", res1);
+    const res2 = await ShipModel.find();
+    console.log("res2: ", res2);
   });
 });
