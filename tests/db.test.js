@@ -78,6 +78,7 @@ describe("populate", () => {
     const story = await Story.findOne({ title: "Casino Royale" })
       .populate("author")
       .exec();
+    console.log("story: ", story);
 
     expect(story.author.name).toBe("Ian Fleming");
   });
@@ -1978,7 +1979,7 @@ describe("operation", () => {
     const res1 = await ShipModel.aggregate([
       {
         $project: {
-          expectedDeliveryDate: {
+          deliveryDate: {
             $dateAdd: {
               startDate: "$purchaseDate",
               unit: "day",
@@ -1994,5 +1995,57 @@ describe("operation", () => {
     console.log("res: ", res1);
     const res2 = await ShipModel.find();
     console.log("res2: ", res2);
+
+    /** */
+    ShipModel.updateOne(
+      { custId: 456 },
+      { $set: { deliveryDate: new Date("2021-01-10") } }
+    );
+    ShipModel.updateOne(
+      { custId: 457 },
+      { $set: { deliveryDate: new Date("2021-03-01") } }
+    );
+    ShipModel.updateOne(
+      { custId: 458 },
+      { $set: { deliveryDate: new Date("2021-03-02") } }
+    );
+
+    const res3 = await ShipModel.aggregate([
+      {
+        $match: {
+          $expr: {
+            $gt: [
+              "$deliveryDate",
+              {
+                $dateAdd: {
+                  startDate: "$purchaseDate",
+                  unit: "day",
+                  amount: 1,
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          custId: 1,
+          purchased: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$purchaseDate",
+            },
+          },
+          delivery: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$deliveryDate",
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res3: ", res3);
   });
 });
