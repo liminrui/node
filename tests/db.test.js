@@ -1969,4 +1969,58 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("dateDiff", async () => {
+    const SubscriptionModel = require("../model/subscriptions");
+    await SubscriptionModel.insertMany([
+      {
+        custId: 456,
+        start: new Date("2010-01-01"),
+        end: new Date("2011-01-01"),
+      },
+      {
+        custId: 457,
+        start: new Date("2010-01-01"),
+        end: new Date("2011-06-31"),
+      },
+      {
+        custId: 458,
+        start: new Date("2010-03-01"),
+        end: new Date("2010-04-30"),
+      },
+    ]);
+
+    const res = await SubscriptionModel.aggregate([
+      {
+        $project: {
+          Start: "$start",
+          End: "$end",
+          years: {
+            $dateDiff: {
+              startDate: "$start",
+              endDate: "$end",
+              unit: "year",
+            },
+          },
+          months: {
+            $dateDiff: {
+              startDate: "$start",
+              endDate: "$end",
+              unit: "month",
+            },
+          },
+          days: {
+            $dateDiff: {
+              startDate: "$start",
+              endDate: "$end",
+              unit: "day",
+            },
+          },
+          _id: 0,
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
+  });
 });
