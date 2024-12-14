@@ -15,6 +15,7 @@ const saleSchema = new Schema({
   quantity: Object,
   date: Date,
   price: Number,
+  items: Array,
 });
 
 const SaleModel = new mongoose.model("sale", saleSchema);

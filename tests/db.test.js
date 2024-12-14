@@ -2128,4 +2128,45 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("filter", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      {
+        _id: 0,
+        items: [
+          { item_id: 43, quantity: 2, price: 10, name: "pen" },
+          { item_id: 2, quantity: 1, price: 240, name: "briefcase" },
+        ],
+      },
+      {
+        _id: 1,
+        items: [
+          { item_id: 23, quantity: 3, price: 110, name: "notebook" },
+          { item_id: 103, quantity: 4, price: 5, name: "pen" },
+          { item_id: 38, quantity: 1, price: 300, name: "printer" },
+        ],
+      },
+      {
+        _id: 2,
+        items: [{ item_id: 4, quantity: 1, price: 23, name: "paper" }],
+      },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      {
+        $project: {
+          _id: 0,
+          items: {
+            $filter: {
+              input: "$items",
+              as: "item",
+              cond: { $gte: ["$$item.price", 100] },
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });
