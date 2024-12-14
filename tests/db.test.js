@@ -78,6 +78,7 @@ describe("populate", () => {
     const story = await Story.findOne({ title: "Casino Royale" })
       .populate("author")
       .exec();
+    console.log("story: ", story);
 
     expect(story.author.name).toBe("Ian Fleming");
   });
@@ -1967,7 +1968,85 @@ describe("operation", () => {
         },
       },
     ]);
-    console.log("res: ", res);
+
+    const ShipModel = require("../model/shipping");
+    await ShipModel.insertMany([
+      { custId: 456, purchaseDate: new Date("2020-12-31") },
+      { custId: 457, purchaseDate: new Date("2021-02-28") },
+      { custId: 458, purchaseDate: new Date("2021-02-26") },
+    ]);
+
+    const res1 = await ShipModel.aggregate([
+      {
+        $project: {
+          deliveryDate: {
+            $dateAdd: {
+              startDate: "$purchaseDate",
+              unit: "day",
+              amount: 3,
+            },
+          },
+        },
+      },
+      {
+        $merge: ShipModel.collection.name,
+      },
+    ]);
+    console.log("res: ", res1);
+    const res2 = await ShipModel.find();
+    console.log("res2: ", res2);
+
+    /** */
+    ShipModel.updateOne(
+      { custId: 456 },
+      { $set: { deliveryDate: new Date("2021-01-10") } }
+    );
+    ShipModel.updateOne(
+      { custId: 457 },
+      { $set: { deliveryDate: new Date("2021-03-01") } }
+    );
+    ShipModel.updateOne(
+      { custId: 458 },
+      { $set: { deliveryDate: new Date("2021-03-02") } }
+    );
+
+    const res3 = await ShipModel.aggregate([
+      {
+        $match: {
+          $expr: {
+            $gt: [
+              "$deliveryDate",
+              {
+                $dateAdd: {
+                  startDate: "$purchaseDate",
+                  unit: "day",
+                  amount: 1,
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          custId: 1,
+          purchased: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$purchaseDate",
+            },
+          },
+          delivery: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$deliveryDate",
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res3: ", res3);
   });
 
   test("dateDiff", async () => {
