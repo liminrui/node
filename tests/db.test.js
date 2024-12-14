@@ -289,10 +289,11 @@ describe("aggerate", () => {
           },
         },
       },
-      {
-        $match: { count: { $gt: 3 } },
-      },
+      // {
+      //   $match: { count: { $gt: 3 } },
+      // },
     ]);
+
     const res2 = await ArtistModel.aggregate([
       {
         $bucketAuto: {
@@ -301,6 +302,7 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res: ", JSON.stringify(res2, null, "\t"));
   });
 
   test("unwind", async () => {
@@ -446,9 +448,10 @@ describe("aggerate", () => {
         },
       },
       {
-        $count: "test_count",
+        $count: "test_count", // the output is  [ { test_count: 4 } ]
       },
     ]);
+    console.log("res: ", res);
   });
 
   test("fill", async () => {
@@ -491,19 +494,20 @@ describe("aggerate", () => {
           },
         },
       },
-      {
-        $fill: {
-          sortBy: {
-            date: 1,
-          },
-          output: {
-            score: {
-              method: "locf", // 如果填写的字段包含 null 和非空值，locf 会根据 sortBy 排序将 null 和缺失值设置为该字段的最后一个已知非空值。
-            },
-          },
-        },
-      },
+      // {
+      //   $fill: {
+      //     sortBy: {
+      //       date: 1,
+      //     },
+      //     output: {
+      //       score: {
+      //         method: "locf", // 如果填写的字段包含 null 和非空值，locf 会根据 sortBy 排序将 null 和缺失值设置为该字段的最后一个已知非空值。
+      //       },
+      //     },
+      //   },
+      // },
     ]);
+    console.log("res: ", res);
   });
 
   test("near", async () => {
@@ -2100,6 +2104,28 @@ describe("operation", () => {
       },
     ]);
 
+    console.log("res: ", res);
+  });
+
+  test("radis2Deg", async () => {
+    const TrigonometryModel = require("../model/trigonometry");
+    await TrigonometryModel.insertMany([
+      {
+        angle_a: 53.13010235415597870314438744090659,
+        angle_b: 36.86989764584402129685561255909341,
+        angle_c: 90,
+      },
+    ]);
+
+    const res = await TrigonometryModel.aggregate([
+      {
+        $addFields: {
+          radis_a: {
+            $degreesToRadians: "$angle_a",
+          },
+        },
+      },
+    ]);
     console.log("res: ", res);
   });
 });
