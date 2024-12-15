@@ -494,18 +494,18 @@ describe("aggerate", () => {
           },
         },
       },
-      // {
-      //   $fill: {
-      //     sortBy: {
-      //       date: 1,
-      //     },
-      //     output: {
-      //       score: {
-      //         method: "locf", // 如果填写的字段包含 null 和非空值，locf 会根据 sortBy 排序将 null 和缺失值设置为该字段的最后一个已知非空值。
-      //       },
-      //     },
-      //   },
-      // },
+      {
+        $fill: {
+          sortBy: {
+            date: 1,
+          },
+          output: {
+            score: {
+              method: "locf", // 如果填写的字段包含 null 和非空值，locf 会根据 sortBy 排序将 null 和缺失值设置为该字段的最后一个已知非空值。
+            },
+          },
+        },
+      },
     ]);
     console.log("res: ", res);
   });
@@ -537,11 +537,12 @@ describe("aggerate", () => {
           distanceField: "dist.calculated",
           maxDistance: 2,
           query: { category: "Parks" },
-          includeLocs: "dist.location",
+          includeLocs: "dist.locationaa",
           spherical: true, // 使用球面坐标
         },
       },
     ]);
+    console.log("res: ", JSON.stringify(res, null, "\t"));
   });
 
   test("lookup", async () => {
@@ -634,6 +635,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res2: ", JSON.stringify(res2, null, "\t"));
+
     //
 
     const RestaurantModel = require("../model/restaurant");
@@ -2161,9 +2164,90 @@ describe("operation", () => {
             $filter: {
               input: "$items",
               as: "item",
-              cond: { $gte: ["$$item.price", 100] },
+              // cond: { $gte: ["$$item.price", 100] },
+              cond: {
+                $regexMatch: { input: "$$item.name", regex: /^p/ },
+              },
+              // limit: 1,
             },
           },
+        },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res, null, "\t"));
+  });
+
+  test("getField", async () => {
+    const InventoryModel = require("../model/inventory");
+    await InventoryModel.insertMany([
+      { _id: 1, item: "sweatshirt", $price: 45.99, qty: 300 },
+      { _id: 2, item: "winter coat", $price: 499.99, qty: 200 },
+      { _id: 3, item: "sun dress", $price: 199.99, qty: 250 },
+      { _id: 4, item: "leather boots", $price: 249.99, qty: 300 },
+      { _id: 5, item: "bow tie", $price: 9.99, qty: 180 },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $match: {
+          $expr: { $gt: [{ $getField: { $literal: "$price" } }, 200] }, //  $literal price字段前有美元符号
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
+
+  test("in", async () => {
+    const FruitModel = require("../model/fruit");
+
+    await FruitModel.insertMany([
+      {
+        _id: 1,
+        location: "24th Street",
+        in_stock: ["apples", "oranges", "bananas"],
+      },
+      {
+        _id: 2,
+        location: "36th Street",
+        in_stock: ["bananas", "pears", "grapes"],
+      },
+      {
+        _id: 3,
+        location: "82nd Street",
+        in_stock: ["cantaloupes", "watermelons", "apples"],
+      },
+    ]);
+
+    const res = await FruitModel.aggregate([
+      {
+        $project: {
+          "store location": "$location",
+          "has bananas": {
+            $in: ["bananas", "$in_stock"],
+          },
+        },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res, null, "\t"));
+  });
+
+  test("indexOfArray", async () => {
+    const InventoryModel = require("../model/inventory");
+
+    await InventoryModel.insertMany([
+      { _id: 0, items: ["one", "two", "three"] },
+      { _id: 1, items: [1, 2, 3] },
+      { _id: 2, items: [1, 2, 3, 2] },
+      { _id: 3, items: [null, null, 2] },
+      { _id: 4, items: [2, null, null, 2] },
+      { _id: 5, items: null },
+      { _id: 6, amount: 3 },
+    ]);
+
+    const res = await InventoryModel.aggregate([
+      {
+        $project: {
+          index: { $indexOfArray: ["$items", 2] },
         },
       },
     ]);
