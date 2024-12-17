@@ -1058,6 +1058,7 @@ describe("aggerate", () => {
     ]);
   });
 
+  // 暂无用
   test("redact", async () => {
     const ForecastModel = require("../model/forecasts");
 
@@ -1134,6 +1135,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+    // console.log("res: ", res);
+
     //
 
     const res1 = await CollectionModel.aggregate([
@@ -1148,6 +1151,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+    // console.log("res1: ", res1);
+
     //
     const res2 = await CollectionModel.aggregate([
       {
@@ -1164,6 +1169,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res2: ", res2);
+
     //
     const ContactModel = require("../model/contact");
     await ContactModel.insertMany([
@@ -1231,6 +1238,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+
+    console.log("res: ", JSON.stringify(res, null, "\t"));
   });
 
   test("sample", async () => {
@@ -1299,6 +1308,7 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res1: ", res1);
   });
 
   test("sortByCount", async () => {
@@ -2255,6 +2265,38 @@ describe("operation", () => {
       },
     ]);
 
+    console.log("res: ", res);
+  });
+
+  test("maxN", async () => {
+    const GameScoreModel = require("../model/gamescore");
+    await GameScoreModel.insertMany([
+      { playerId: "PlayerA", gameId: "G1", score: 31 },
+      { playerId: "PlayerB", gameId: "G1", score: 33 },
+      { playerId: "PlayerC", gameId: "G1", score: 99 },
+      { playerId: "PlayerD", gameId: "G1", score: 1 },
+      { playerId: "PlayerA", gameId: "G2", score: 10 },
+      { playerId: "PlayerB", gameId: "G2", score: 14 },
+      { playerId: "PlayerC", gameId: "G2", score: 66 },
+      { playerId: "PlayerD", gameId: "G2", score: 80 },
+    ]);
+
+    const res = await GameScoreModel.aggregate([
+      {
+        $match: { gameId: "G1" },
+      },
+      {
+        $group: {
+          _id: "$gameId",
+          maxThreeScores: {
+            $maxN: {
+              input: ["$score", "$playerId"],
+              n: 3,
+            },
+          },
+        },
+      },
+    ]);
     console.log("res: ", res);
   });
 });
