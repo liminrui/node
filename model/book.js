@@ -10,6 +10,7 @@ const BookSchema = new Schema({
   isbn: String,
   lastModified: String,
   author: Object,
+  editionNumber: Number,
 });
 
 const BookModel = mongoose.model("book", BookSchema);

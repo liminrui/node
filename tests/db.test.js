@@ -4,6 +4,7 @@ const UserModel = require("../model/user");
 const genUserData = require("../utils/gen");
 const { Story, Person } = require("../model/populate");
 const OrderModel = require("../model/order");
+const StockModel = require("../model/stock");
 // const { describe } = require("node:test");
 
 let mongoServer = null;
@@ -195,6 +196,7 @@ describe("aggerate", () => {
         },
       },
     ]);
+    console.log("res: ", res);
 
     expect(res.length).toBe(3);
 
@@ -1413,6 +1415,86 @@ describe("aggerate", () => {
       },
     ]);
   });
+
+  test("setWindowField", async () => {
+    const CakeSaleModel = require("../model/cakeSale");
+    await CakeSaleModel.insertMany([
+      {
+        _id: 0,
+        type: "chocolate",
+        orderDate: new Date("2020-05-18T14:10:30Z"),
+        state: "CA",
+        price: 13,
+        quantity: 120,
+      },
+      {
+        _id: 1,
+        type: "chocolate",
+        orderDate: new Date("2021-03-20T11:30:05Z"),
+        state: "WA",
+        price: 14,
+        quantity: 140,
+      },
+      {
+        _id: 2,
+        type: "vanilla",
+        orderDate: new Date("2021-01-11T06:31:15Z"),
+        state: "CA",
+        price: 12,
+        quantity: 145,
+      },
+      {
+        _id: 3,
+        type: "vanilla",
+        orderDate: new Date("2020-02-08T13:13:23Z"),
+        state: "WA",
+        price: 13,
+        quantity: 104,
+      },
+      {
+        _id: 4,
+        type: "strawberry",
+        orderDate: new Date("2019-05-18T16:09:01Z"),
+        state: "CA",
+        price: 41,
+        quantity: 162,
+      },
+      {
+        _id: 5,
+        type: "strawberry",
+        orderDate: new Date("2019-01-08T06:12:03Z"),
+        state: "WA",
+        price: 43,
+        quantity: 134,
+      },
+    ]);
+
+    const res = await CakeSaleModel.aggregate([
+      {
+        $setWindowFields: {
+          partitionBy: "$state",
+          sortBy: {
+            orderDate: 1,
+          },
+          output: {
+            cumulativeQuantityForState: {
+              $sum: "$quantity",
+              window: {
+                documents: ["unbounded", "current"], // 这意味着 $sum 会返回分区开始和当前文档之间的文档的累积 quantity。
+              },
+            },
+            averageQuantity: {
+              $avg: "$quantity",
+              window: {
+                documents: [-1, 0], // 这意味着 $avg 会返回分区中当前文档 (0) 与前一个文档 (-1) 之间的移动平均 quantity。
+              },
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
 });
 
 test("bcrypt password", async () => {
@@ -2047,5 +2129,132 @@ describe("operation", () => {
       },
     ]);
     console.log("res3: ", res3);
+  });
+
+  test("let", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      { _id: 1, price: 10, tax: 0.5, applyDiscount: true },
+
+      { _id: 2, price: 10, tax: 0.25, applyDiscount: false },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      {
+        $project: {
+          finalTotal: {
+            $let: {
+              vars: {
+                total: { $add: ["$price", "$tax"] },
+                discounted: {
+                  $cond: { if: "$applyDiscount", then: 0.9, else: 1 },
+                },
+              },
+              in: { $multiply: ["$$total", "$$discounted"] },
+            },
+          },
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
+  });
+
+  test("linearfill", async () => {
+    const SaleModel = require("../model/stock");
+    await SaleModel.insertMany([
+      {
+        time: new Date("2021-03-08T09:00:00.000Z"),
+        price: 500,
+      },
+      {
+        time: new Date("2021-03-08T10:00:00.000Z"),
+      },
+      {
+        time: new Date("2021-03-08T11:00:00.000Z"),
+        price: 515,
+      },
+      {
+        time: new Date("2021-03-08T12:00:00.000Z"),
+      },
+      {
+        time: new Date("2021-03-08T13:00:00.000Z"),
+      },
+      {
+        time: new Date("2021-03-08T14:00:00.000Z"),
+        price: 485,
+      },
+    ]);
+
+    const res = await StockModel.aggregate([
+      {
+        $setWindowFields: {
+          sortBy: {
+            time: 1,
+          },
+          output: {
+            price: { $linearFill: "$price" },
+          },
+        },
+      },
+    ]);
+    console.log("res: ", res);
+  });
+
+  test("literal", async () => {
+    const StockInventoryModel = require("../model/storeInventory");
+
+    await StockInventoryModel.insertMany([
+      { _id: 1, item: "napkins", price: "$2.50" },
+      { _id: 2, item: "coffee", price: "1" },
+      { _id: 3, item: "soap", price: "$1" },
+    ]);
+
+    const res = await StockInventoryModel.aggregate([
+      { $project: { costsOneDollar: { $eq: ["$price", { $literal: "$1" }] } } },
+    ]);
+    // console.log("res: ", res);
+    const BookModel = require("../model/book");
+    await BookModel.insertMany([
+      { _id: 1, title: "Dracula", condition: "new" },
+      { _id: 2, title: "The Little Prince", condition: "new" },
+    ]);
+
+    const res1 = await BookModel.aggregate([
+      {
+        $project: {
+          title: 1,
+          number: { $literal: 1 },
+        },
+      },
+    ]);
+    console.log("res1: ", res1);
+  });
+
+  test("map", async () => {
+    const GradeModel = require("../model/grade");
+    await GradeModel.insertMany([
+      { quizzes: [5, 6, 7] },
+      { quizzes: [] },
+      { quizzes: [3, 8, 9] },
+    ]);
+
+    const res = await GradeModel.aggregate([
+      {
+        $project: {
+          mapArr: {
+            $map: {
+              input: "$quizzes",
+              as: "item",
+              in: {
+                $add: ["$$item", 2],
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
   });
 });

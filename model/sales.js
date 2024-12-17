@@ -2,11 +2,8 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 /**
- * "_id" : 1,
-   "item" : "abc",
-   "price" : 20,
-   "quantity" : 5,
-   "date" : ISODate("2017-05-20T10:24:51.303Z")
+ * 
+{ _id: 1, price: 10, tax: 0.50, applyDiscount: true }
  */
 const saleSchema = new Schema({
   _id: Number,
@@ -15,6 +12,8 @@ const saleSchema = new Schema({
   quantity: Object,
   date: Date,
   price: Number,
+  tax: Number,
+  applyDiscount: Boolean,
 });
 
 const SaleModel = new mongoose.model("sale", saleSchema);
