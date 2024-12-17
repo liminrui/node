@@ -2299,4 +2299,84 @@ describe("operation", () => {
     ]);
     console.log("res: ", res);
   });
+
+  test("median", async () => {
+    const TestScoreModel = require("../model/testScore");
+    await TestScoreModel.insertMany([
+      { studentId: "2345", test01: 62, test02: 81, test03: 80 },
+      { studentId: "2356", test01: 60, test02: 83, test03: 79 },
+      { studentId: "2358", test01: 67, test02: 82, test03: 78 },
+      { studentId: "2367", test01: 64, test02: 72, test03: 77 },
+      { studentId: "2369", test01: 60, test02: 53, test03: 72 },
+    ]);
+
+    const res = await TestScoreModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          test01_median: {
+            $median: {
+              input: "$test01",
+              method: "approximate",
+            },
+          },
+        },
+      },
+    ]);
+    // console.log("res: ", res);
+
+    const res1 = await TestScoreModel.aggregate([
+      {
+        $project: {
+          _id: 0,
+          studentId: 1,
+          testMedians: {
+            $median: {
+              input: ["$test01", "$test02", "$test03"],
+              method: "approximate",
+            },
+          },
+        },
+      },
+    ]);
+    console.log("res1: ", res1);
+  });
+
+  test("mergeObject", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      {
+        _id: 1,
+        year: 2017,
+        item: "A",
+        quantity: { "2017Q1": 500, "2017Q2": 500 },
+      },
+      {
+        _id: 2,
+        year: 2016,
+        item: "A",
+        quantity: { "2017Q1": 400, "2016Q2": 300, "2016Q3": 0, "2016Q4": 0 },
+      },
+      { _id: 3, year: 2017, item: "B", quantity: { "2017Q1": 300 } },
+      {
+        _id: 4,
+        year: 2016,
+        item: "B",
+        quantity: { "2016Q3": 100, "2016Q4": 250 },
+      },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      {
+        $group: {
+          _id: "$item",
+          mergedSales: {
+            $mergeObjects: "$quantity",
+          },
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
+  });
 });
