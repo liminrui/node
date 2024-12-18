@@ -3,13 +3,13 @@ const Schema = mongoose.Schema;
 
 /**
  * 
-{ _id: 1, price: 10, tax: 0.50, applyDiscount: true }
+{ "_id" : 1, "item" : "abc", "price" : 10, "quantity" : 2, "date" : ISODate("2014-01-01T08:00:00Z") }
  */
 const saleSchema = new Schema({
   _id: Number,
   year: Number,
   item: String,
-  quantity: Object,
+  quantity: Number,
   date: Date,
   price: Number,
   tax: Number,

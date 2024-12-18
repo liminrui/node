@@ -1377,9 +1377,10 @@ describe("aggerate", () => {
         $unwind: "$tags",
       },
       {
-        $sortByCount: "$tags",
+        $sortByCount: "$tags", // { tags: '', count: number }
       },
     ]);
+    console.log("res: ", res);
   });
 
   test("unionWith", async () => {
@@ -1424,6 +1425,8 @@ describe("aggerate", () => {
         },
       },
     ]);
+
+    console.log("res: ", res);
   });
 
   test("setWindowField", async () => {
@@ -1559,6 +1562,7 @@ test("text", async () => {
   const res1 = await ArticleModel.find({
     $text: { $search: "bake coffee cake" },
   });
+  console.log("res1: ", res1);
 
   // 以下示例匹配短语 coffee shop和Cafe con Leche 。这是两个短语的逻辑 OR。
   const res2 = await ArticleModel.find({
@@ -2378,5 +2382,117 @@ describe("operation", () => {
     ]);
 
     console.log("res: ", res);
+  });
+
+  test("meta", async () => {
+    const ArticleModel = require("../model/article");
+    await ArticleModel.insertMany([
+      { _id: 1, title: "cakes and ale" },
+      { _id: 2, title: "more cakes" },
+      { _id: 3, title: "bread" },
+      { _id: 4, title: "some cakes" },
+      { _id: 5, title: "two cakes to go" },
+      { _id: 6, title: "pie" },
+    ]);
+
+    const res = await ArticleModel.aggregate([
+      {
+        $match: {
+          $text: {
+            $search: "cake",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $meta: "textScore",
+          },
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+    // console.log("res: ", res);
+    const res1 = await ArticleModel.find(
+      {
+        $text: {
+          $search: "cake",
+        },
+      },
+      {
+        score: {
+          $meta: "textScore",
+        },
+      }
+    );
+    console.log("res1: ", res1);
+  });
+
+  test("push", async () => {
+    const SaleModel = require("../model/sales");
+    await SaleModel.insertMany([
+      {
+        _id: 1,
+        item: "abc",
+        price: 10,
+        quantity: 2,
+        date: new Date("2014-01-01T08:00:00Z"),
+      },
+      {
+        _id: 2,
+        item: "jkl",
+        price: 20,
+        quantity: 1,
+        date: new Date("2014-02-03T09:00:00Z"),
+      },
+      {
+        _id: 3,
+        item: "xyz",
+        price: 5,
+        quantity: 5,
+        date: new Date("2014-02-03T09:05:00Z"),
+      },
+      {
+        _id: 4,
+        item: "abc",
+        price: 10,
+        quantity: 10,
+        date: new Date("2014-02-15T08:00:00Z"),
+      },
+      {
+        _id: 5,
+        item: "xyz",
+        price: 5,
+        quantity: 10,
+        date: new Date("2014-02-15T09:05:00Z"),
+      },
+      {
+        _id: 6,
+        item: "xyz",
+        price: 5,
+        quantity: 5,
+        date: new Date("2014-02-15T12:05:10Z"),
+      },
+      {
+        _id: 7,
+        item: "xyz",
+        price: 5,
+        quantity: 10,
+        date: new Date("2014-02-15T14:12:12Z"),
+      },
+    ]);
+
+    const res = await SaleModel.aggregate([
+      { $sort: { date: 1, item: 1 } },
+      {
+        $group: {
+          _id: { day: { $dayOfYear: "$date" }, year: { $year: "$date" } },
+          itemsSold: { $push: { item: "$item", quantity: "$quantity" } },
+        },
+      },
+    ]);
+    console.log("res: ", JSON.stringify(res, null, "\t"));
   });
 });
