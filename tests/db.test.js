@@ -1575,7 +1575,7 @@ test("text", async () => {
   });
 });
 
-test("meta", async () => {
+test("meta1", async () => {
   const ArticleModel = require("../model/article");
 
   await ArticleModel.insertMany([
@@ -1616,6 +1616,8 @@ test("meta", async () => {
       },
     },
   ]);
+  console.log("res1: ", res1);
+
   //
 });
 

@@ -1,7 +1,7 @@
 const Mongoose = require("mongoose");
 // { _id: 5, item: "bananas", qty: 5000000000, price: Decimal128("1.25") }
 const OrderSchema = new Mongoose.Schema({
-  _id: Number,
+  // _id: Number,
   name: String,
   size: String,
   price: Number,
@@ -13,7 +13,7 @@ const OrderSchema = new Mongoose.Schema({
   qty: Number,
 });
 
-OrderSchema.index({ item: 1, type: 1 });
+OrderSchema.index({ type: 1, item: 1 });
 
 const OrderModel = Mongoose.model("Order", OrderSchema);
 
