@@ -2497,4 +2497,28 @@ describe("operation", () => {
     ]);
     console.log("res: ", JSON.stringify(res, null, "\t"));
   });
+
+  test("range", async () => {
+    const DistanceModel = require("../model/distance");
+    await DistanceModel.insertMany([
+      { _id: 0, city: "San Jose", distance: 42 },
+      { _id: 1, city: "Sacramento", distance: 88 },
+      { _id: 2, city: "Reno", distance: 218 },
+      { _id: 3, city: "Los Angeles", distance: 383 },
+    ]);
+
+    const res = await DistanceModel.aggregate([
+      {
+        $project: {
+          _id: 0,
+          city: 1,
+          stop: {
+            $range: [0, "$distance", 10],
+          },
+        },
+      },
+    ]);
+
+    console.log("res: ", res);
+  });
 });
